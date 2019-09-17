@@ -38,4 +38,5 @@ if [[ $? -ne 0 ]] ; then
 fi
 
 echo "* copying native library in resources"
+mkdir -p ../resources
 cp ./libjnidbus.so ../resources/libjnidbus.so
