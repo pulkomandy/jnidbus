@@ -1,3 +1,7 @@
+![](https://travis-ci.com/viveris/jnidbus.svg?branch=master) ![](https://img.shields.io/badge/Kotlin-JVM-green.svg) ![](https://img.shields.io/badge/-Viveris%20Technologies-critical?style=flat-square)
+
+
+
 # JNIDBus - A JNI wrapper around libdbus
 
 JNIDbus is a Java JNI wrapper around the native library libdbus allowing an easy and straightforward use of Dbus from Java code in an object oriented way. Keep in mind that this library is a wrapper around the official library and not a protocol implementation like [this one](https://github.com/hypfvieh/dbus-java).
