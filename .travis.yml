@@ -1,15 +1,16 @@
 language: java
 
-dist: xenial
-
-jdk:
-  - openjdk7
-  - openjdk11
+matrix:
+  include:
+    - os: linux
+      dist: precise
+    - os: linux
+      dist: xenial
 
 sudo: false
 
 before_install:
-  - sudo apt-get install -y dbus-1
+  - sudo apt-get install -y libdbus-1
 
 install: true
 
