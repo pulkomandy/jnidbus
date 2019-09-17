@@ -22,8 +22,8 @@ public class LongHandler extends CommonHandler<LongMessage> {
             type = MemberType.SIGNAL
     )
     public void handle(LongMessage msg){
-        this.barrier.countDown();
         this.value = msg;
+        this.barrier.countDown();
     }
 
     @RemoteInterface("Handlers.Primitive.LongHandler")

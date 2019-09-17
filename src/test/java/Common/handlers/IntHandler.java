@@ -22,8 +22,8 @@ public class IntHandler extends CommonHandler<IntMessage> {
             type = MemberType.SIGNAL
     )
     public void handle(IntMessage msg){
-        this.barrier.countDown();
         this.value = msg;
+        this.barrier.countDown();
     }
 
     @RemoteInterface("Handlers.Primitive.IntHandler")

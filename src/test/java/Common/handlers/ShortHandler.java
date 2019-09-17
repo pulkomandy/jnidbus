@@ -22,8 +22,8 @@ public class ShortHandler extends CommonHandler<ShortMessage> {
             type = MemberType.SIGNAL
     )
     public void handle(ShortMessage msg){
-        this.barrier.countDown();
         this.value = msg;
+        this.barrier.countDown();
     }
 
     @RemoteInterface("Handlers.Primitive.ShortHandler")

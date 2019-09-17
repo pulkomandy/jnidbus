@@ -22,8 +22,8 @@ public class ByteHandler extends CommonHandler<ByteMessage> {
             type = MemberType.SIGNAL
     )
     public void handle(ByteMessage msg){
-        this.barrier.countDown();
         this.value = msg;
+        this.barrier.countDown();
     }
 
     @RemoteInterface("Handlers.Primitive.ByteHandler")

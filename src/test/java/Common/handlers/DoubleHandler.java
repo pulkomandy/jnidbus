@@ -22,8 +22,8 @@ public class DoubleHandler extends CommonHandler<DoubleMessage> {
             type = MemberType.SIGNAL
     )
     public void handle(DoubleMessage msg){
-        this.barrier.countDown();
         this.value = msg;
+        this.barrier.countDown();
     }
 
     @RemoteInterface("Handlers.Primitive.DoubleHandler")
