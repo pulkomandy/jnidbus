@@ -173,6 +173,7 @@ public class Dispatcher {
                 }catch (Exception e){
                     //if the message is a call, reply an error
                     if(msgPointer != 0){
+                        e.printStackTrace();
                         this.eventLoop.send(new ErrorReplySendingRequest(e.getCause(),msgPointer, interfaceName, member));
                     }else{
                         LOG.warn("An exception was raised during signal handling",e);

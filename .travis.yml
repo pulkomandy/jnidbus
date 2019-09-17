@@ -11,7 +11,7 @@ before_install:
 
 install: true
 
-script: dbus-run-session -- ./gradlew check
+script: dbus-run-session -- ./gradlew clean check
 
 # configure caching (https://docs.travis-ci.com/user/languages/java/#Caching)
 before_cache:

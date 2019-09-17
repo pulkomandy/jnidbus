@@ -45,7 +45,7 @@ class KotlinMethodInvocator(
     override fun <T : Serializable>call(handler : Any?, method: Method, param: Serializable?): Any {
         val promise = Promise<T>()
         val kotlinMethod = method.kotlinFunction!!
-        val job = scope.launch {
+        val job = this.scope.launch {
             kotlinMethod.callSuspend(handler,param)
                     .let { promise.resolve(it as T) }
         }
