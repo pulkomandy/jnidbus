@@ -268,6 +268,7 @@ public class EventLoop implements Closeable {
                 }else if(abstractRequest instanceof ErrorReplySendingRequest){
                     ErrorReplySendingRequest req = (ErrorReplySendingRequest)abstractRequest;
                     LOG.debug("Sending DBus error {} thrown form {}.{}",req.getError().toString(),req.getInterfaceName(),req.getMember());
+                    req.getError().printStackTrace();
                     if(req.getError() instanceof DBusException){
                         DBusException cast = (DBusException)req.getError();
                         this.sendReplyError(this.dBusContextPointer,req.getMessagePointer(),cast.getCode(),cast.getMessage());

@@ -35,7 +35,10 @@ allprojects{
         testLogging {
             events "failed"
             exceptionFormat "full"
+            showStandardStreams = true
         }
+        outputs.upToDateWhen {false}
+        maxParallelForks = 4
     }
 }
 jmh{
@@ -52,13 +55,5 @@ task compileJNI(type: Exec) {
     commandLine "${project.projectDir}/src/scripts/compileJNI.sh"
 }
 test.dependsOn compileJNI
-
-//force gradle to run test each times
-test.outputs.upToDateWhen {false}
-
-//enable parallel tests
-tasks.withType(Test) {
-    maxParallelForks = 4
-}
 
 apply from: rootProject.file('maven.gradle')
