@@ -45,9 +45,15 @@ class KotlinMethodInvocator(
     override fun <T : Serializable>call(handler : Any?, method: Method, param: Serializable?): Any {
         val promise = Promise<T>()
         val kotlinMethod = method.kotlinFunction!!
+
+        if(!kotlinMethod.isSuspend) return kotlinMethod.call(handler,param) as T
+
         val job = this.scope.launch {
-            kotlinMethod.callSuspend(handler,param)
-                    .let { promise.resolve(it as T) }
+            val returned = kotlinMethod.callSuspend(handler,param)
+            if(returned !is Promise<*>) promise.resolve(returned as T)
+            else{
+                throw Exception("Suspending functions can not return Promises")
+            }
         }
         job.invokeOnCompletion {
             if(it != null){
