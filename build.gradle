@@ -34,6 +34,7 @@ allprojects{
         jvmArgs "-Djava.library.path=${root}/src/main/resources"
         testLogging {
             events "failed"
+            exceptionFormat "short"
         }
     }
 }
