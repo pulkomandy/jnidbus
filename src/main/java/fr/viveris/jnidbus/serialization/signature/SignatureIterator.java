@@ -60,6 +60,10 @@ public class SignatureIterator  implements Iterator<SignatureElement> {
                 }
             case OBJECT_BEGIN:
                 return new SignatureElement(this.generateStructSignature(),null,SupportedTypes.OBJECT_BEGIN);
+
+            case DICT_ENTRY_BEGIN:
+                return new SignatureElement(this.generateDictEntrySignature(),null,SupportedTypes.DICT_ENTRY_BEGIN);
+
             default: throw new IllegalStateException("Unknown non-primitive type:" + current);
         }
     }
@@ -75,32 +79,7 @@ public class SignatureIterator  implements Iterator<SignatureElement> {
      * @return String of the array signature
      */
     private String generateArraySignature(){
-        StringBuilder builder = new StringBuilder();
-        SupportedTypes firstElement = SupportedTypes.forChar(this.rawSignature[this.position++]);
-
-        //we reached a primitive element, return
-        if(firstElement.getPrimitiveType() != null){
-            builder.append(firstElement.getValue());
-        }else{
-            switch (firstElement){
-                case ARRAY:
-                    //append the array char
-                    builder.append(firstElement.getValue());
-                    //append the array signature
-                    builder.append(this.generateArraySignature());
-                    break;
-                case OBJECT_BEGIN:
-                    //append the object_begin char
-                    builder.append(firstElement.getValue());
-                    //generate the struct signature
-                    builder.append(this.generateStructSignature());
-                    //the last object_end char is ignored by generateStructSignature(), add it manually
-                    builder.append(this.rawSignature[this.position-1]);
-                    break;
-            }
-
-        }
-        return builder.toString();
+        return this.extractNextSignatureElement();
     }
 
     /**
@@ -121,6 +100,57 @@ public class SignatureIterator  implements Iterator<SignatureElement> {
             if(depth > 0){
                 builder.append(current);
             }
+        }
+        return builder.toString();
+    }
+
+    private String generateDictEntrySignature(){
+        StringBuilder builder = new StringBuilder();
+
+        //get the first element (key) and check it is a primitive type
+        SupportedTypes firstElement = SupportedTypes.forChar(this.rawSignature[this.position++]);
+        if(firstElement.getPrimitiveType() == null) throw new SignatureParsingException("A dict entry key must be a primitive type");
+        builder.append(firstElement.getValue());
+
+        builder.append(this.extractNextSignatureElement());
+
+        SupportedTypes endDictEntry = SupportedTypes.forChar(this.rawSignature[this.position++]);
+        if(endDictEntry != SupportedTypes.DICT_ENTRY_END) throw new SignatureParsingException("A dict entry can not have more than two elements (key and value)");
+
+        return builder.toString();
+    }
+
+    private String extractNextSignatureElement(){
+        StringBuilder builder = new StringBuilder();
+        SupportedTypes value = SupportedTypes.forChar(this.rawSignature[this.position++]);
+        switch (value) {
+            case ARRAY:
+                //append the array char
+                builder.append(value.getValue());
+                //append the array signature
+                builder.append(this.generateArraySignature());
+                break;
+            case OBJECT_BEGIN:
+                //append the object_begin char
+                builder.append(value.getValue());
+                //generate the struct signature
+                builder.append(this.generateStructSignature());
+                //the last object_end char is ignored by generateStructSignature(), add it manually
+                builder.append(this.rawSignature[this.position - 1]);
+                break;
+            case DICT_ENTRY_BEGIN:
+                //append the dict_entry char
+                builder.append(value.getValue());
+                //generate the struct signature
+                builder.append(this.generateDictEntrySignature());
+                //the last dict_entry_end char is ignored by generateDictEntrySignature(), add it manually
+                builder.append(this.rawSignature[this.position - 1]);
+                break;
+            default:
+                if (value.getPrimitiveType() == null)
+                    throw new SignatureParsingException("Unknown non-container value: " + value);
+                builder.append(value.getValue());
+                break;
         }
         return builder.toString();
     }

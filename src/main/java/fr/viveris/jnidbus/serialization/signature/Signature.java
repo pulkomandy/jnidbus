@@ -45,6 +45,17 @@ public class Signature implements Iterable<SignatureElement>{
         return this.iterator().next();
     }
 
+    /**
+     * Method creating an iterator and returning the second element, this is usefull when dealing with dict_en tries as they
+     * only have two elements (the key and item).
+     * @return
+     */
+    public SignatureElement getSecond(){
+        Iterator<SignatureElement> iter = this.iterator();
+        iter.next();
+        return iter.next();
+    }
+
     public static void clearCache(){
         CACHE.clear();
     }

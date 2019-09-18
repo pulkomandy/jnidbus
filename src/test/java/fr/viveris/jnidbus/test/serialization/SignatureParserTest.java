@@ -97,6 +97,80 @@ public class SignatureParserTest {
     }
 
     @Test
+    public void primitiveDictEntryTest(){
+        Object[] expectations = new Object[]{
+                SupportedTypes.DICT_ENTRY_BEGIN,
+                new Object[]{
+                        SupportedTypes.STRING,
+                        SupportedTypes.INTEGER,
+                }
+        };
+        assertTrue(this.checkSignature("{si}",expectations));
+    }
+
+    @Test
+    public void objectDictEntryTest(){
+        Object[] expectations = new Object[]{
+                SupportedTypes.DICT_ENTRY_BEGIN,
+                new Object[]{
+                        SupportedTypes.STRING,
+                        SupportedTypes.OBJECT_BEGIN,
+                        new Object[]{
+                                SupportedTypes.STRING,
+                                SupportedTypes.INTEGER
+                        }
+                }
+        };
+        assertTrue(this.checkSignature("{s(si)}",expectations));
+    }
+
+    @Test
+    public void arrayDictEntryTest(){
+        Object[] expectations = new Object[]{
+                SupportedTypes.DICT_ENTRY_BEGIN,
+                new Object[]{
+                        SupportedTypes.STRING,
+                        SupportedTypes.ARRAY,
+                        new Object[]{
+                                SupportedTypes.STRING,
+                        }
+                }
+        };
+        assertTrue(this.checkSignature("{sas}",expectations));
+    }
+
+    @Test
+    public void nestedDictEntryTest(){
+        Object[] expectations = new Object[]{
+                SupportedTypes.DICT_ENTRY_BEGIN,
+                new Object[]{
+                        SupportedTypes.STRING,
+                        SupportedTypes.DICT_ENTRY_BEGIN,
+                        new Object[]{
+                                SupportedTypes.STRING,
+                                SupportedTypes.STRING,
+                        }
+                }
+        };
+        assertTrue(this.checkSignature("{s{ss}}",expectations));
+    }
+
+    @Test
+    public void arrayOfDictEntryTest(){
+        Object[] expectations = new Object[]{
+                SupportedTypes.ARRAY,
+                new Object[]{
+                        SupportedTypes.DICT_ENTRY_BEGIN,
+                        new Object[]{
+                                SupportedTypes.STRING,
+                                SupportedTypes.INTEGER,
+                        }
+                }
+        };
+        assertTrue(this.checkSignature("a{si}",expectations));
+    }
+
+    @Test
     public void complexSignatureTest(){
         Object[] expectations = {
                 SupportedTypes.INTEGER,
@@ -150,9 +224,9 @@ public class SignatureParserTest {
     private boolean checkSignature(String signatureString, Object[] expectations){
         int i = 0;
         for(SignatureElement ele : new Signature(signatureString)){
-            if(ele.isPrimitive()) assertSame(ele.getPrimitive(), expectations[i++]);
+            if(ele.isPrimitive()) assertSame(expectations[i++], ele.getPrimitive());
             else{
-                assertSame(ele.getContainerType(),expectations[i++] );
+                assertSame(expectations[i++], ele.getContainerType());
                 assertTrue(checkElement(ele,(Object[]) expectations[i++]));
             }
         }
@@ -164,9 +238,9 @@ public class SignatureParserTest {
         Signature subSignature = element.getSignature();
         int i = 0;
         for(SignatureElement sub : subSignature){
-            if(sub.isPrimitive()) assertSame(sub.getPrimitive(),values[i++]);
+            if(sub.isPrimitive()) assertSame(values[i++], sub.getPrimitive());
             else{
-                assertSame(sub.getContainerType(),values[i++] );
+                assertSame(values[i++], sub.getContainerType());
                 assertTrue(checkElement(sub,(Object[]) values[i++]));
             }
         }
