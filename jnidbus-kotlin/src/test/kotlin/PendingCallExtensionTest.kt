@@ -1,5 +1,5 @@
-import Common.DBusObjects.SingleStringMessage
-import Common.DBusTestCase
+import fr.viveris.jnidbus.test.common.DBusObjects.SingleStringMessage
+import fr.viveris.jnidbus.test.common.DBusTestCase
 import fr.viveris.jnidbus.await
 import fr.viveris.jnidbus.dispatching.GenericHandler
 import fr.viveris.jnidbus.dispatching.MemberType

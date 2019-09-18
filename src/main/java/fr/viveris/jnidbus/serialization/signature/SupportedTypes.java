@@ -18,9 +18,10 @@ public enum SupportedTypes {
     OBJECT_BEGIN('(',null,null),
     OBJECT_END(')',null,null);
 
-    char value;
-    Class primitiveType;
-    Class boxedType;
+    private char value;
+    private Class primitiveType;
+    private Class boxedType;
+
     SupportedTypes(char s,Class primitiveType, Class boxedType) {
         this.value = s;
         this.primitiveType = primitiveType;

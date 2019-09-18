@@ -1,7 +1,6 @@
-import Common.DBusObjects.SingleStringMessage
-import Common.DBusTestCase
+import fr.viveris.jnidbus.test.common.DBusObjects.SingleStringMessage
+import fr.viveris.jnidbus.test.common.DBusTestCase
 import fr.viveris.jnidbus.await
-import fr.viveris.jnidbus.dispatching.GenericHandler
 import fr.viveris.jnidbus.dispatching.KotlinGenericHandler
 import fr.viveris.jnidbus.dispatching.KotlinMethodInvocator
 import fr.viveris.jnidbus.dispatching.MemberType
@@ -9,7 +8,6 @@ import fr.viveris.jnidbus.dispatching.annotation.Handler
 import fr.viveris.jnidbus.dispatching.annotation.HandlerMethod
 import fr.viveris.jnidbus.message.Message
 import fr.viveris.jnidbus.message.PendingCall
-import fr.viveris.jnidbus.message.Promise
 import fr.viveris.jnidbus.remote.RemoteInterface
 import fr.viveris.jnidbus.remote.RemoteMember
 import kotlinx.coroutines.*

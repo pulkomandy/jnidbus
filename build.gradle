@@ -22,22 +22,31 @@ dependencies {
     jmh "org.openjdk.jmh:jmh-generator-annprocess:$jmh_version"
 }
 
-// Limit JUnit tests to classes ending in 'Test'.
-test {
-    include '**/*Test.class'
-}
-
 //add JNI library path for JMH and tests
 def root = project.projectDir
 allprojects{
     tasks.withType(Test) {
+        filter{
+            includeTestsMatching "*Test"
+        }
+
+        //add JNIDBus JNI library to path
         jvmArgs "-Djava.library.path=${root}/src/main/resources"
+
+        //show only failed test and their full exception
         testLogging {
             events "failed"
             exceptionFormat "full"
         }
+
+        //always execute tests
         outputs.upToDateWhen {false}
+
+        //launch tests in parallel
         maxParallelForks = 4
+
+        //fail the test task as soon as one test is failing
+        failFast = true
     }
 }
 jmh{

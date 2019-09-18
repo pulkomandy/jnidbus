@@ -38,24 +38,27 @@ public class SignatureIterator  implements Iterator<SignatureElement> {
     @Override
     public SignatureElement next() {
         //get current char and increment
-        char current = this.rawSignature[this.position++];
+        SupportedTypes current = SupportedTypes.forChar(this.rawSignature[this.position++]);
 
-        if(current == SupportedTypes.ARRAY.getValue()){
-            //if the current element is an array, get its first signature element, if this element is primitive, it means we have
-            //a non-recursive primitive array, which is easy to parse. We don't increment the position as we need the first element to build
-            //the signature of recursive arrays
-            char firstSignatureElement = this.rawSignature[this.position];
-            if(firstSignatureElement == SupportedTypes.OBJECT_BEGIN.getValue() || firstSignatureElement == SupportedTypes.ARRAY.getValue()){
-                return new SignatureElement(this.generateArraySignature(),null,SupportedTypes.ARRAY);
-            }else{
-                //go to the next element and return the primitive array signature element
-                this.position++;
-                return new SignatureElement(String.valueOf(firstSignatureElement),SupportedTypes.forChar(firstSignatureElement),SupportedTypes.ARRAY);
-            }
-        }else if(current == SupportedTypes.OBJECT_BEGIN.getValue()){
-            return new SignatureElement(this.generateStructSignature(),null,SupportedTypes.OBJECT_BEGIN);
-        }else{
-            return new SignatureElement(String.valueOf(current),SupportedTypes.forChar(current),null);
+        //if the current element has a primitive type, we have a single, non recursive element
+        if(current.getPrimitiveType() != null){
+            return new SignatureElement(String.valueOf(current.getValue()),current,null);
+        }
+
+        //else, we have a complex container type (array, object or dict_entry)
+        switch (current){
+            case ARRAY:
+                //peek next element to check if the array contains a primitive type
+                SupportedTypes firstArrayElement = SupportedTypes.forChar(this.rawSignature[this.position]);
+                if(firstArrayElement.getPrimitiveType() != null){
+                    this.position++;
+                    return new SignatureElement(String.valueOf(firstArrayElement.getValue()),firstArrayElement,SupportedTypes.ARRAY);
+                }else{
+                    return new SignatureElement(this.generateArraySignature(),null,SupportedTypes.ARRAY);
+                }
+            case OBJECT_BEGIN:
+                return new SignatureElement(this.generateStructSignature(),null,SupportedTypes.OBJECT_BEGIN);
+            default: throw new IllegalStateException("Unknown non-primitive type:" + current);
         }
     }
 
@@ -71,19 +74,30 @@ public class SignatureIterator  implements Iterator<SignatureElement> {
      */
     private String generateArraySignature(){
         StringBuilder builder = new StringBuilder();
-        //do...while in order to support nested arrays
-        do{
-            builder.append(this.rawSignature[this.position]);
-        }while(this.rawSignature[this.position++] == SupportedTypes.ARRAY.getValue());
+        SupportedTypes firstElement = SupportedTypes.forChar(this.rawSignature[this.position++]);
 
-        //check at position -1 as the do-while already increased the counter
-        if(this.rawSignature[this.position-1] == SupportedTypes.OBJECT_BEGIN.getValue()){
-            //add struct content
-            builder.append(this.generateStructSignature());
-            //generateStructSignature skip ")", we add it manually
-            builder.append(this.rawSignature[this.position-1]);
+        //we reached a primitive element, return
+        if(firstElement.getPrimitiveType() != null){
+            builder.append(firstElement.getValue());
+        }else{
+            switch (firstElement){
+                case ARRAY:
+                    //append the array char
+                    builder.append(firstElement.getValue());
+                    //append the array signature
+                    builder.append(this.generateArraySignature());
+                    break;
+                case OBJECT_BEGIN:
+                    //append the object_begin char
+                    builder.append(firstElement.getValue());
+                    //generate the struct signature
+                    builder.append(this.generateStructSignature());
+                    //the last object_end char is ignored by generateStructSignature(), add it manually
+                    builder.append(this.rawSignature[this.position-1]);
+                    break;
+            }
+
         }
-
         return builder.toString();
     }
 
@@ -99,6 +113,7 @@ public class SignatureIterator  implements Iterator<SignatureElement> {
         while(depth > 0){
             char current = this.rawSignature[this.position++];
             if(current == SupportedTypes.OBJECT_END.getValue()) depth--;
+            if(current == SupportedTypes.OBJECT_BEGIN.getValue()) depth++;
             //allow us to ignore OBJECT_END token if it's the end of the parsing
             if(depth > 0){
                 builder.append(current);

@@ -3,9 +3,9 @@
  */
 package fr.viveris;
 
-import Common.DBusObjects.ArrayRecursiveObject;
-import Common.DBusObjects.SimpleMessage;
-import Common.DBusTestCase;
+import fr.viveris.jnidbus.test.common.DBusObjects.ArrayRecursiveObject;
+import fr.viveris.jnidbus.test.common.DBusObjects.SimpleMessage;
+import fr.viveris.jnidbus.test.common.DBusTestCase;
 import fr.viveris.jnidbus.BusType;
 import fr.viveris.jnidbus.Dbus;
 import fr.viveris.jnidbus.bindings.bus.EventLoop;
