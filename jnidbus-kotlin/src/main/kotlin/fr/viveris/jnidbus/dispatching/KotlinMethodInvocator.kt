@@ -42,6 +42,7 @@ class KotlinMethodInvocator(
      *
      * @return Any must be used because of the way the jnidbus Dispatcher is built, but it will always return a Promise
      */
+    @Suppress("UNCHECKED_CAST")
     override fun <T : Serializable>call(handler : Any?, method: Method, param: Serializable?): Any {
         val promise = Promise<T>()
         val kotlinMethod = method.kotlinFunction!!

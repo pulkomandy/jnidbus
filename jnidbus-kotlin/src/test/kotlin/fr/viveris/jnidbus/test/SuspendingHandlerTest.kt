@@ -1,3 +1,5 @@
+package fr.viveris.jnidbus.test
+
 import fr.viveris.jnidbus.test.common.DBusObjects.SingleStringMessage
 import fr.viveris.jnidbus.test.common.DBusTestCase
 import fr.viveris.jnidbus.await
@@ -60,12 +62,14 @@ class SuspendingHandlerTest : DBusTestCase(){
     class CallHandler : KotlinGenericHandler() {
 
         @HandlerMethod(member = "blockingCallWithSuspend", type = MemberType.METHOD)
+        @Suppress("UNUSED_PARAMETER")
         suspend fun blockingCallWithSuspend(emptyMessage: Message.EmptyMessage): SingleStringMessage {
             delay(2000)
             return SingleStringMessage().apply { string = "test" }
         }
 
         @HandlerMethod(member = "standardCall", type = MemberType.METHOD)
+        @Suppress("UNUSED_PARAMETER")
         fun standardCall(emptyMessage: Message.EmptyMessage): SingleStringMessage {
             return SingleStringMessage().apply { string = "test" }
         }

@@ -1,3 +1,5 @@
+package fr.viveris.jnidbus.test
+
 import fr.viveris.jnidbus.test.common.DBusObjects.SingleStringMessage
 import fr.viveris.jnidbus.test.common.DBusTestCase
 import fr.viveris.jnidbus.await

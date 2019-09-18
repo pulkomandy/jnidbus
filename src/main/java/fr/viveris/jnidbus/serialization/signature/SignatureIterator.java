@@ -3,6 +3,8 @@
  */
 package fr.viveris.jnidbus.serialization.signature;
 
+import fr.viveris.jnidbus.exception.SignatureParsingException;
+
 import java.util.Iterator;
 
 /**
@@ -103,7 +105,7 @@ public class SignatureIterator  implements Iterator<SignatureElement> {
 
     /**
      * Generate an object signature. This method supports nested object and will ignore the object delimiter signature
-     * ex: (si) will become si
+     * ex: (si) will become si and (s(i)) will become s(i)
      *
      * @return
      */
@@ -111,6 +113,7 @@ public class SignatureIterator  implements Iterator<SignatureElement> {
         StringBuilder builder = new StringBuilder();
         int depth = 1;
         while(depth > 0){
+            if(this.position == this.rawSignature.length) throw new SignatureParsingException("Malformed struct, perhaps there is a closing parenthesis missing");
             char current = this.rawSignature[this.position++];
             if(current == SupportedTypes.OBJECT_END.getValue()) depth--;
             if(current == SupportedTypes.OBJECT_BEGIN.getValue()) depth++;
