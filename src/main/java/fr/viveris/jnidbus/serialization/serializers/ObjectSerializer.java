@@ -24,11 +24,11 @@ public class ObjectSerializer extends Serializer {
     }
 
     @Override
-    public Object unserialize(Object value) throws MessageSignatureMismatchException {
+    public Object deserialize(Object value) throws MessageSignatureMismatchException {
         if(!(value instanceof DBusObject)) throw new IllegalStateException("Unexpected object class, expected DBusObject");
-        Serializable unserialized = this.metadata.newInstance();
-        unserialized.unserialize(new DBusObject(this.signature.getSignatureString(),((DBusObject)value).getValues()));
-        return unserialized;
+        Serializable deserialized = this.metadata.newInstance();
+        deserialized.deserialize(new DBusObject(this.signature.getSignatureString(),((DBusObject)value).getValues()));
+        return deserialized;
     }
 
 }

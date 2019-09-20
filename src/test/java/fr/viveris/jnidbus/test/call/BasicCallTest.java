@@ -38,7 +38,7 @@ public class BasicCallTest extends DBusTestCase {
     }
 
     @Test
-    public void callIsSerializedAndUnserialized() throws InterruptedException {
+    public void callIsSerializedAnddeserialized() throws InterruptedException {
         CallHandler handler = new CallHandler();
         this.receiver.addHandler(handler);
         BasicCallTestRemote remoteObj = this.sender.createRemoteObject(this.receiverBusName, "/fr/viveris/jnidbus/test/call/BasicCallTest",BasicCallTestRemote.class);

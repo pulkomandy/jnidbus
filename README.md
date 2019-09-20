@@ -95,7 +95,7 @@ public class SubObject extends Message{
 
 ### Arrays
 
-DBus array type is mapped to the `List` collection. A List can contain anything serializable, including other lists. As JNIDBus uses reflection to know the type of the List items, the generic type must always be explicitly used in the getters and setters
+The DBus array type is mapped to either the `List` class or to native arrays . A List/array can contain anything serializable, including other lists/arrays. As JNIDBus uses reflection to know the type of the List items, the generic type must always be explicitly used in the getters and setters
 
 *<u>example for a nested list message:</u>*
 

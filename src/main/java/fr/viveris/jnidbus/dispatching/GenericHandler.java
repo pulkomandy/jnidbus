@@ -3,6 +3,7 @@
  */
 package fr.viveris.jnidbus.dispatching;
 
+import fr.viveris.jnidbus.dispatching.annotation.Handler;
 import fr.viveris.jnidbus.message.Promise;
 import fr.viveris.jnidbus.serialization.DBusType;
 import fr.viveris.jnidbus.serialization.Serializable;
@@ -29,7 +30,7 @@ public abstract class GenericHandler {
 
         for(Method m : methods){
             //check if the method is a handler method, if not keep looking
-            fr.viveris.jnidbus.dispatching.annotation.HandlerMethod annotation = m.getAnnotation(fr.viveris.jnidbus.dispatching.annotation.HandlerMethod.class);
+            fr.viveris.jnidbus.dispatching.annotation.HandlerMethod annotation = this.getHandlerMethodAnnotation(m);
             if(annotation == null) continue;
 
             //check method input and output
@@ -68,5 +69,24 @@ public abstract class GenericHandler {
 
         }
         return returned;
+    }
+
+    /**
+     * Returns the Handler annotation for this handler, this method can be overridden for test purposes or to easily
+     * register the same handler to multiple paths/interfaces
+     *
+     * @return the Handler annotation
+     */
+    public Handler getHandlerAnnotation(){
+        return this.getClass().getAnnotation(Handler.class);
+    }
+
+    /**
+     * Returns the HandlerMethod annotation for the given method handler, this method can be overridden for test purposes
+     *
+     * @return the Handler annotation
+     */
+    public fr.viveris.jnidbus.dispatching.annotation.HandlerMethod getHandlerMethodAnnotation(Method method){
+        return method.getAnnotation(fr.viveris.jnidbus.dispatching.annotation.HandlerMethod.class);
     }
 }

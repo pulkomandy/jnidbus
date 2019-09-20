@@ -19,6 +19,23 @@ jclass find_class(context* context, const char* name){
     return classJVM;
 }
 
+
+jclass find_array_class(context* context, const char* name){
+    //try to get from cache
+    std::string nameString = std::string(name);
+    jclass classJVM = context->class_cache[nameString];
+
+    //if class not found, fetch from the JVM
+    if(classJVM == NULL){
+        JNIEnv* env;
+        get_env(context,&env);
+        classJVM = (jclass) env->NewGlobalRef(env->GetObjectClass(env->NewObjectArray(0,find_class(context,name),NULL)));
+        context->class_cache[nameString] = classJVM;
+    }
+
+    return classJVM;
+}
+
 jmethodID find_method(context* context, const char* class_name, const char* name, const char* signature){
     //generate method key
     std::string nameString = std::string()+class_name+"_"+name+"_"+signature;

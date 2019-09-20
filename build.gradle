@@ -33,10 +33,14 @@ allprojects{
         //add JNIDBus JNI library to path
         jvmArgs "-Djava.library.path=${root}/src/main/resources"
 
+        //set JNI in berserk mode
+        //jvmArgs "-Xcheck:jni"
+
         //show only failed test and their full exception
         testLogging {
             events "failed"
             exceptionFormat "full"
+            //showStandardStreams = true
         }
 
         //always execute tests

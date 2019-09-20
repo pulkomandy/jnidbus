@@ -80,6 +80,7 @@
      * 
      */
     jclass find_class(context* context, const char* name);
+    jclass find_array_class(context* context, const char* name);
 
     /**
      * Like the meta-class cache, this one takes care of method IDs

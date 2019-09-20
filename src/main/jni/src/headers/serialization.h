@@ -17,9 +17,9 @@
 void serialize(context* ctx, jobject message, DBusMessageIter* container);
 
 /**
- * Unserialize a DBus message iterator into a JVM Message object
+ * deserialize a DBus message iterator into a JVM Message object
  */ 
-jobject unserialize(context* ctx, DBusMessageIter* container);
+jobject deserialize(context* ctx, DBusMessageIter* container);
 
 
 
@@ -29,9 +29,14 @@ jobject unserialize(context* ctx, DBusMessageIter* container);
 void serialize_array(context* ctx, int dbus_type, jobjectArray array, DBusMessageIter* container, DBusSignatureIter* signatureIter);
 
 /**
+ * Transfer the JVM primitive array into the container
+ */
+void serialize_primitive_array(context* ctx, int dbus_type, jarray object, int length,  DBusMessageIter* container);
+
+/**
  * Transfer the container array into a JVM array
  */
-jobjectArray unserialize_array(context* ctx, int dbus_type, DBusMessageIter* container);
+jobjectArray deserialize_array(context* ctx, int dbus_type, DBusMessageIter* container);
 
 
 
@@ -43,6 +48,6 @@ void serialize_element(context* ctx, int dbus_type, jobject object, DBusMessageI
 /**
  * Transfer the serialized element into a JVM object
  */
-jobject unserialize_element(context* ctx, DBusMessageIter* container);
+jobject deserialize_element(context* ctx, DBusMessageIter* container);
 
 #endif

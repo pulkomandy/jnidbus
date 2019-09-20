@@ -15,7 +15,7 @@ DBusHandlerResult handle_dispatch(DBusConnection* connection, DBusMessage* msg, 
   
   DBusMessageIter rootIter;
   dbus_message_iter_init(msg, &rootIter);
-  jobject jvmObject = unserialize(ctx,&rootIter);
+  jobject jvmObject = deserialize(ctx,&rootIter);
   //set the object signature
   env->SetObjectField(
       jvmObject,
@@ -101,11 +101,11 @@ void handle_call_response(DBusPendingCall* pending, void* ctxPtr){
       env->NewStringUTF(err.message)
     );
     dbus_error_free(&err);
-  //else, unserialize and call the notify() method  
+  //else, deserialize and call the notify() method
   }else{
     DBusMessageIter rootIter;
     dbus_message_iter_init(msg, &rootIter);
-    jobject jvmObject = unserialize(ctx,&rootIter);
+    jobject jvmObject = deserialize(ctx,&rootIter);
     env->SetObjectField(
       jvmObject,
       find_field(ctx,"fr/viveris/jnidbus/serialization/DBusObject","signature","Ljava/lang/String;"),

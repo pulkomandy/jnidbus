@@ -91,11 +91,12 @@ public class RemoteObjectInterceptor implements InvocationHandler {
         }
     }
 
-    public static SignalMetadata getFromCache(Class<? extends Signal> signal){
-        if (SIGNAL_CACHE.getCachedEntity(signal) != null) return SIGNAL_CACHE.getCachedEntity(signal);
-
-        SignalMetadata meta = new SignalMetadata(signal);
-        SIGNAL_CACHE.addCachedEntity(signal,meta);
+    public static SignalMetadata getFromCache(Signal signal){
+        SignalMetadata meta = SIGNAL_CACHE.getCachedEntity(signal.getClass());
+        if (meta == null){
+            meta = new SignalMetadata(signal);
+            SIGNAL_CACHE.addCachedEntity(signal.getClass(),meta);
+        }
         return meta;
     }
 

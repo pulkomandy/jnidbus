@@ -21,8 +21,8 @@ public class ComplexArraySerializer extends Serializer{
     private boolean isPrimitiveArray;
     private Serializer nestedSerializer;
 
-    //nullable, used only if the array contains objects
-    private Class<? extends Serializable> objectClass;
+    private Class expectedArrayType;
+    private Class expectedValueType;
 
     public ComplexArraySerializer(Type genericType, SignatureElement signature, Class managedClass, String managedFieldName) throws MessageCheckException {
         super(signature, managedClass, managedFieldName);
@@ -37,6 +37,7 @@ public class ComplexArraySerializer extends Serializer{
         }
 
         this.isPrimitiveArray = rawType.isArray();
+        this.expectedArrayType = rawType;
 
         Class<?> arrayValueClass;
         if(this.isPrimitiveArray){
@@ -49,6 +50,7 @@ public class ComplexArraySerializer extends Serializer{
                 arrayValueClass = (Class<?>) listType;
             }
         }
+        this.expectedValueType = arrayValueClass;
 
         if(!this.isPrimitiveArray && !List.class.isAssignableFrom(rawType)){
             throw new MessageCheckException("An array must be a Java primitive array or a List",this.managedClass,this.managedFieldName);
@@ -84,7 +86,7 @@ public class ComplexArraySerializer extends Serializer{
     public Object serialize(Object value){
         Object[] returned;
         if(isPrimitiveArray){
-            returned = new Object[((Serializable[]) value).length];
+            returned = new Object[Array.getLength(value)];
         }else{
             returned = new Object[((List) value).size()];
         }
@@ -105,24 +107,24 @@ public class ComplexArraySerializer extends Serializer{
     }
 
     @Override
-    public Object unserialize(Object value) throws MessageSignatureMismatchException {
+    public Object deserialize(Object value) throws MessageSignatureMismatchException {
         if(!(value instanceof Object[])) throw new IllegalStateException("Unexpected object class, expected DBUSObject[]");
         boolean isDBusObject = value instanceof DBusObject[];
         Object[] values = (Object[]) value;
 
         if(this.isPrimitiveArray){
             int i = 0;
-            Object[] returned = (Object[]) Array.newInstance(this.objectClass,((Object[]) value).length);
+            Object returned = Array.newInstance(this.expectedValueType,values.length);
             for(Object s : values){
                 if(isDBusObject) s = new DBusObject(this.valueSignature.getSignatureString(), ((DBusObject)s).getValues());
-                returned[i++] = this.nestedSerializer.unserialize(s);
+                Array.set(returned,i++,this.nestedSerializer.deserialize(s));
             }
             return returned;
         }else{
             List returned = new ArrayList();
             for(Object s : values){
                 if(isDBusObject) s = new DBusObject(this.valueSignature.getSignatureString(), ((DBusObject)s).getValues());
-                returned.add(this.nestedSerializer.unserialize(s));
+                returned.add(this.nestedSerializer.deserialize(s));
             }
             return returned;
         }

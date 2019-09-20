@@ -19,7 +19,7 @@ import java.util.concurrent.CountDownLatch;
  * each interface name will contain a list of criteria it can match, when a criteria is matched, it will look it up in another map whcih contains
  * to which handler method the criteria correspond.
  *
- * When all of this is done and that a match is found, it will try unserialize the message and call the method. If the method is a DBus method call
+ * When all of this is done and that a match is found, it will try deserialize the message and call the method. If the method is a DBus method call
  * it will also wait for the return value and send it to the event loop to return to the caller.
  *
  * As dispatcher registration is asynchronous, there is a synchronization mechanism that the DBus class will use to make the call to addHandler
@@ -120,7 +120,7 @@ public class Dispatcher {
      * else it is a method call to which we should reply. When the message is a call the method will return true if the message was dispatched, false if there is
      * no handler registered for the criteria, by doing this Dbus can return a standard error to the caller telling the member could not be found
      *
-     * @param args pre-unserialized message
+     * @param args pre-deserialized message
      * @param interfaceName interface on which the message was received
      * @param member member of the message
      * @param msgPointer pointer to the message we should reply to, can be 0
@@ -143,8 +143,8 @@ public class Dispatcher {
         //try to find a matching criteria
         for(Criteria c: availableHandlers){
             if(c.equals(requestCriteria)){
-                LOG.debug("Dispatcher found a handler, trying to unserialize");
-                //match found, try to unserialize
+                LOG.debug("Dispatcher found a handler, trying to deserialize");
+                //match found, try to deserialize
                 HandlerMethod handler = this.handlers.get(c);
                 try{
                     Serializable param;
@@ -153,7 +153,7 @@ public class Dispatcher {
                         param = Message.EMPTY;
                     }else{
                         param = handler.getInputType().newInstance();
-                        param.unserialize(args);
+                        param.deserialize(args);
                     }
                     //get the return value of the handler, and if not null send a reply
                     Object returnObject = handler.call(param);

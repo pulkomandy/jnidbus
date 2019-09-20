@@ -88,7 +88,7 @@ public class Dbus implements AutoCloseable {
     public void addHandler(GenericHandler handler){
         LOG.info("Adding DBus handler {}",handler.getClass().getName());
         //get annotation
-        Handler handlerAnnotation = handler.getClass().getAnnotation(Handler.class);
+        Handler handlerAnnotation = handler.getHandlerAnnotation();
         if(handlerAnnotation == null) throw new IllegalStateException("The given handler does not have the Handler annotation");
 
         //get all criteria provided by this handler
@@ -124,7 +124,7 @@ public class Dbus implements AutoCloseable {
 
     public void removeHandler(GenericHandler handler){
         //get annotation
-        Handler handlerAnnotation = handler.getClass().getAnnotation(Handler.class);
+        Handler handlerAnnotation = handler.getHandlerAnnotation();
         if(handlerAnnotation == null) throw new IllegalStateException("The given handler does not have the Handler annotation");
 
         Dispatcher dispatcher = this.dispatchers.get(handlerAnnotation.path());
@@ -170,7 +170,7 @@ public class Dbus implements AutoCloseable {
      * @param signal
      */
     public void sendSignal(String objectPath, Signal signal){
-        SignalMetadata meta = RemoteObjectInterceptor.getFromCache(signal.getClass());
+        SignalMetadata meta = RemoteObjectInterceptor.getFromCache(signal);
         this.eventLoop.send(new SignalSendingRequest(signal.getParam().serialize(),objectPath,meta.getInterfaceName(),meta.getMember()));
     }
 

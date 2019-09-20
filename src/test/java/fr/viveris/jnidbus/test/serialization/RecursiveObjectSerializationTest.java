@@ -41,7 +41,7 @@ public class RecursiveObjectSerializationTest extends DBusTestCase {
         assertEquals("s",((DBusObject)obj.getValues()[1]).getSignature());
         assertEquals("test2",((DBusObject)obj.getValues()[1]).getValues()[0]);
 
-        //send signal, which test JNI and Java unserialization
+        //send signal, which test JNI and Java deserialization
         this.sender.sendSignal("/fr/viveris/jnidbus/test/serialization/RecursiveObjectSerializationTest",new RecursiveObjectSerializationTestRemote.RecursiveObjectSignal(typeObject));
         assertTrue(handler.barrier.await(2, TimeUnit.SECONDS));
         RecursiveObject received = handler.recursiveObject;
@@ -77,7 +77,7 @@ public class RecursiveObjectSerializationTest extends DBusTestCase {
         assertEquals("asi",subObj1.getSignature());
         assertEquals("asi",subObj2.getSignature());
 
-        //send signal, which test JNI and Java unserialization
+        //send signal, which test JNI and Java deserialization
         this.sender.sendSignal("/fr/viveris/jnidbus/test/serialization/RecursiveObjectSerializationTest",new RecursiveObjectSerializationTestRemote.ArrayRecursiveObjectSignal(typeObject));
         assertTrue(handler.barrier.await(2, TimeUnit.SECONDS));
         ArrayRecursiveObject received = handler.arrayRecursiveObject;

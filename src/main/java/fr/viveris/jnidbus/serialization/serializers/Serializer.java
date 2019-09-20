@@ -16,5 +16,5 @@ public abstract class Serializer {
 
     public abstract Object serialize(Object value);
 
-    public abstract Object unserialize(Object value) throws MessageSignatureMismatchException;
+    public abstract Object deserialize(Object value) throws MessageSignatureMismatchException;
 }

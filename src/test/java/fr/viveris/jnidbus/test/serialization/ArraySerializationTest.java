@@ -3,7 +3,8 @@
  */
 package fr.viveris.jnidbus.test.serialization;
 
-import fr.viveris.jnidbus.test.common.DBusTestCase;
+import fr.viveris.jnidbus.test.common.DBusObjects.arrays.NestedPrimitiveArray;
+import fr.viveris.jnidbus.test.common.DBusObjects.arrays.PrimitiveArray;
 import fr.viveris.jnidbus.test.common.DBusObjects.CollectionArray;
 import fr.viveris.jnidbus.test.common.DBusObjects.CollectionOfCollectionArray;
 import fr.viveris.jnidbus.dispatching.GenericHandler;
@@ -14,143 +15,91 @@ import fr.viveris.jnidbus.remote.RemoteInterface;
 import fr.viveris.jnidbus.remote.RemoteMember;
 import fr.viveris.jnidbus.remote.Signal;
 import fr.viveris.jnidbus.serialization.DBusObject;
+import fr.viveris.jnidbus.test.common.handlers.arrays.NestedPrimitiveArrayHandler;
+import fr.viveris.jnidbus.test.common.handlers.arrays.PrimitiveArrayHandler;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
-public class ArraySerializationTest extends DBusTestCase {
+public class ArraySerializationTest extends SerializationTestCase {
 
     @Test
-    public void collectionOfPrimitiveSerializationAndUnserialization() throws InterruptedException {
-        SignalHandler handler = new SignalHandler();
-        this.receiver.addHandler(handler);
-        CollectionArray typeObject = new CollectionArray();
+    public void emptyArrayOfPrimitiveTest() throws InterruptedException {
+        PrimitiveArray msg = new PrimitiveArray();
+        msg.setPrimitive(new int[0]);
+        msg.setPrimitiveBoxed(new Integer[0]);
+        msg.setCollection(new ArrayList<Integer>());
 
-        //test empty collection is correctly serialized
-        DBusObject obj = typeObject.serialize();
-        assertEquals("ai",obj.getSignature());
-        assertTrue(obj.getValues()[0] instanceof Object[]);
-        assertEquals(0,((Object[])obj.getValues()[0]).length);
+        PrimitiveArray received = this.sendAndReceive(new PrimitiveArrayHandler(),msg);
 
-        //test if JNI code can as well
-        this.sender.sendSignal("/fr/viveris/jnidbus/test/serialization/ArraySerializationTest",new ArraySerializationTestRemote.CollectionArraySignal(typeObject));
-        assertTrue(handler.barrier.await(2, TimeUnit.SECONDS));
-        CollectionArray received = handler.collectionArraySignal;
-        handler.barrier = new CountDownLatch(1);
-        assertNotNull(receiverBusName);
-        assertEquals(0,received.getArray().size());
-
-        //test non-empty collection is correctly serialized
-        typeObject.getArray().add(42);
-        obj = typeObject.serialize();
-        assertEquals("ai",obj.getSignature());
-        assertTrue(obj.getValues()[0] instanceof Object[]);
-        assertEquals(1,((Object[])obj.getValues()[0]).length);
-        assertEquals(42,((Object[])obj.getValues()[0])[0]);
-
-        //test if JNI code can as well
-        this.sender.sendSignal("/fr/viveris/jnidbus/test/serialization/ArraySerializationTest",new ArraySerializationTestRemote.CollectionArraySignal(typeObject));
-        assertTrue(handler.barrier.await(2, TimeUnit.SECONDS));
-        received = handler.collectionArraySignal;
-        handler.barrier = new CountDownLatch(1);
-        assertNotNull(receiverBusName);
-        assertEquals(1,received.getArray().size());
-        assertEquals(42,received.getArray().get(0).intValue());
+        assertEquals(0,received.getPrimitive().length);
+        assertEquals(0,received.getPrimitiveBoxed().length);
+        assertEquals(0,received.getCollection().size());
     }
 
     @Test
-    public void recursiveCollectionOfPrimitiveSerializationAndUnserialization() throws InterruptedException {
-        SignalHandler handler = new SignalHandler();
-        this.receiver.addHandler(handler);
-        CollectionOfCollectionArray typeObject = new CollectionOfCollectionArray();
+    public void arrayOfPrimitiveTest() throws InterruptedException {
+        PrimitiveArray msg = new PrimitiveArray();
+        int[] primitiveArray = new int[]{1,2,3};
+        Integer[] primitiveBoxed = new Integer[]{4,5,6};
+        Integer[] listValues = new Integer[]{7,8,9};
+        msg.setPrimitive(primitiveArray);
+        msg.setPrimitiveBoxed(primitiveBoxed);
+        msg.setCollection(Arrays.asList(listValues));
 
-        //test empty collection is correctly serialized
-        DBusObject obj = typeObject.serialize();
-        assertEquals("aai",obj.getSignature());
-        assertTrue(obj.getValues()[0] instanceof Object[]);
-        assertEquals(0,((Object[])obj.getValues()[0]).length);
+        PrimitiveArray received = this.sendAndReceive(new PrimitiveArrayHandler(),msg);
 
-        //test JNI code
-        sender.sendSignal("/fr/viveris/jnidbus/test/serialization/ArraySerializationTest",new ArraySerializationTestRemote.CollectionOfCollectionArraySignal(typeObject));
-        assertTrue(handler.barrier.await(2, TimeUnit.SECONDS));
-        CollectionOfCollectionArray received = handler.collectionOfCollectionArraySignal;
-        handler.barrier = new CountDownLatch(1);
-        assertNotNull(receiverBusName);
-        assertEquals(0,received.getArray().size());
+        assertEquals(3,received.getPrimitive().length);
+        assertArrayEquals(primitiveArray,received.getPrimitive());
 
-        //test non-empty collection is correctly serialized
-        ArrayList<Integer> ints = new ArrayList<>();
-        ints.add(42);
-        typeObject.getArray().add(ints);
-        obj = typeObject.serialize();
-        assertEquals("aai",obj.getSignature());
-        assertTrue(obj.getValues()[0] instanceof Object[]);
-        assertEquals(1,((Object[])obj.getValues()[0]).length);
-        Object[] recursiveArray = (Object[])obj.getValues()[0];
-        assertEquals(1,((Object[])recursiveArray[0]).length);
-        assertEquals(42,((Object[])recursiveArray[0])[0]);
+        assertEquals(3,received.getPrimitiveBoxed().length);
+        assertArrayEquals(primitiveBoxed,received.getPrimitiveBoxed());
 
-        //test if JNI code can as well
-        this.sender.sendSignal("/fr/viveris/jnidbus/test/serialization/ArraySerializationTest",new ArraySerializationTestRemote.CollectionOfCollectionArraySignal(typeObject));
-        assertTrue(handler.barrier.await(2, TimeUnit.SECONDS));
-        received = handler.collectionOfCollectionArraySignal;
-        handler.barrier = new CountDownLatch(1);
-        assertNotNull(receiverBusName);
-        assertEquals(1,received.getArray().size());
-        assertEquals(1,received.getArray().get(0).size());
-        assertEquals(42,received.getArray().get(0).get(0).intValue());
-
-
+        assertEquals(3,received.getCollection().size());
+        assertArrayEquals(listValues,received.getCollection().toArray());
     }
 
-    @Handler(
-            path = "/fr/viveris/jnidbus/test/serialization/ArraySerializationTest",
-            interfaceName = "fr.viveris.jnidbus.test.Serialization.ArraySerializationTest"
-    )
-    public class SignalHandler extends GenericHandler {
-        private CountDownLatch barrier = new CountDownLatch(1);
-        private CollectionArray collectionArraySignal;
-        private CollectionOfCollectionArray collectionOfCollectionArraySignal;
+    @Test
+    public void emptyNestedArrayTest() throws InterruptedException {
+        NestedPrimitiveArray msg = new NestedPrimitiveArray();
+        msg.setPrimitive(new int[0][0]);
+        msg.setPrimitiveBoxed(new Integer[0][0]);
+        msg.setCollection(new ArrayList<List<Integer>>());
 
-        @HandlerMethod(
-                member = "collectionArray",
-                type = MemberType.SIGNAL
-        )
-        public void collectionArray(CollectionArray signal){
-            this.collectionArraySignal = signal;
-            this.barrier.countDown();
-        }
+        NestedPrimitiveArray received = this.sendAndReceive(new NestedPrimitiveArrayHandler(),msg);
 
-        @HandlerMethod(
-                member = "collectionOfCollectionArraySignal",
-                type = MemberType.SIGNAL
-        )
-        public void collectionOfCollectionArraySignal(CollectionOfCollectionArray signal){
-            this.collectionOfCollectionArraySignal = signal;
-            this.barrier.countDown();
-        }
+        assertEquals(0,received.getPrimitive().length);
+        assertEquals(0,received.getPrimitiveBoxed().length);
+        assertEquals(0,received.getCollection().size());
     }
 
-    @RemoteInterface("fr.viveris.jnidbus.test.Serialization.ArraySerializationTest")
-    public interface ArraySerializationTestRemote{
+    @Test
+    public void nestedArrayTest() throws InterruptedException {
+        NestedPrimitiveArray msg = new NestedPrimitiveArray();
 
-        @RemoteMember("collectionArray")
-        class CollectionArraySignal extends Signal<CollectionArray> {
-            public CollectionArraySignal(CollectionArray msg) {
-                super(msg);
-            }
-        }
+        int[] primitiveArray = new int[]{1,2,3};
+        Integer[] primitiveBoxed = new Integer[]{4,5,6};
+        Integer[] listValues = new Integer[]{7,8,9};
+        msg.setPrimitive(new int[][]{primitiveArray});
+        msg.setPrimitiveBoxed(new Integer[][]{primitiveBoxed});
+        List<List<Integer>> list = new ArrayList<>();
+        list.add(Arrays.asList(listValues));
+        msg.setCollection(list);
 
-        @RemoteMember("collectionOfCollectionArraySignal")
-        class CollectionOfCollectionArraySignal extends Signal<CollectionOfCollectionArray> {
-            public CollectionOfCollectionArraySignal(CollectionOfCollectionArray msg) {
-                super(msg);
-            }
-        }
+        NestedPrimitiveArray received = this.sendAndReceive(new NestedPrimitiveArrayHandler(),msg);
 
+        assertEquals(1,received.getPrimitive().length);
+        assertEquals(1,received.getPrimitiveBoxed().length);
+        assertEquals(1,received.getCollection().size());
+
+        assertArrayEquals(primitiveArray,received.getPrimitive()[0]);
+        assertArrayEquals(primitiveBoxed,received.getPrimitiveBoxed()[0]);
+        assertArrayEquals(listValues,received.getCollection().get(0).toArray());
     }
 }

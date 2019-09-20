@@ -80,12 +80,12 @@ void serialize(context* ctx, jobject serialized, DBusMessageIter* container){
     env->ReleaseStringUTFChars(dbusTypesJVM, dbusTypesNative);
 }
 
-jobject unserialize(context* ctx, DBusMessageIter* container){
+jobject deserialize(context* ctx, DBusMessageIter* container){
     //get JVM env
     JNIEnv* env;
     get_env(ctx,&env);
 
-    //as DBus can not tell us the size of the message we have to use a vector to temporarily store the unserialized objects
+    //as DBus can not tell us the size of the message we have to use a vector to temporarily store the deserialized objects
     vector<jobject> values;
 
     const char* dbus_object_class_name = "fr/viveris/jnidbus/serialization/DBusObject";
@@ -96,18 +96,18 @@ jobject unserialize(context* ctx, DBusMessageIter* container){
         switch(dbus_message_iter_get_arg_type(container)){
             case DBUS_TYPE_ARRAY:
             {
-                //recurse, unserialize and push to vector
+                //recurse, deserialize and push to vector
                 DBusMessageIter sub_container;
                 dbus_message_iter_recurse(container, &sub_container);
-                values.push_back((jobject)unserialize_array(ctx,dbus_message_iter_get_element_type(container),&sub_container));
+                values.push_back((jobject)deserialize_array(ctx,dbus_message_iter_get_element_type(container),&sub_container));
                 break;
             }
             case DBUS_TYPE_STRUCT:
             {
-                //recurse, unserialize and push to vector
+                //recurse, deserialize and push to vector
                 DBusMessageIter sub_container;
                 dbus_message_iter_recurse(container, &sub_container);
-                values.push_back((jobject) unserialize(ctx,&sub_container));
+                values.push_back((jobject) deserialize(ctx,&sub_container));
                 break;
             }
             case DBUS_TYPE_INVALID:
@@ -117,14 +117,14 @@ jobject unserialize(context* ctx, DBusMessageIter* container){
             }
             default:
             {
-                //unserialize the primitive type and push to vector
-                values.push_back(unserialize_element(ctx,container));
+                //deserialize the primitive type and push to vector
+                values.push_back(deserialize_element(ctx,container));
                 break;
             }
         }
     }while(dbus_message_iter_next(container));
 
-    //get the JVM object constructor and create the object array that will contain the unserialized values
+    //get the JVM object constructor and create the object array that will contain the deserialized values
     jmethodID constructor = find_method(ctx,dbus_object_class_name,"<init>","(Ljava/lang/String;[Ljava/lang/Object;)V");
     jobjectArray objectArray = env->NewObjectArray(values.size(),find_class(ctx,"java/lang/Object"),NULL);
     
@@ -188,48 +188,52 @@ void serialize_array(context* ctx, int dbus_type, jobjectArray array, DBusMessag
             env->DeleteLocalRef(valueJVM);
         }
     }else{
-        //iterate through the array
-        int i = 0;
-        jobject valueJVM;
-        while(i < array_length){
-            //get object to serialize
-            valueJVM = env->GetObjectArrayElement(array,i++);
-            serialize_element(ctx,dbus_type,valueJVM,container);
-            env->DeleteLocalRef(valueJVM);
+        if(env->IsInstanceOf(array,find_array_class(ctx,"java/lang/Object")) == JNI_FALSE){
+            serialize_primitive_array(ctx,dbus_type,array,array_length,container);
+        }else{
+            //iterate through the array
+            int i = 0;
+            jobject valueJVM;
+            while(i < array_length){
+                //get object to serialize
+                valueJVM = env->GetObjectArrayElement(array,i++);
+                serialize_element(ctx,dbus_type,valueJVM,container);
+                env->DeleteLocalRef(valueJVM);
+            }
         }
     }
 }
 
-jobjectArray unserialize_array(context* ctx, int dbus_type, DBusMessageIter* container){
+jobjectArray deserialize_array(context* ctx, int dbus_type, DBusMessageIter* container){
     //get JVM env
     JNIEnv* env;
     get_env(ctx,&env);
 
-    //as DBus can not tell us the size of the message we have to use a vector to temporarily store the unserialized objects
+    //as DBus can not tell us the size of the message we have to use a vector to temporarily store the deserialized objects
     vector<jobject> values;
 
     if(dbus_type == DBUS_TYPE_ARRAY){
         do {
-            //recurse, unserialize and push to vector
+            //recurse, deserialize and push to vector
             DBusMessageIter sub_container;
             dbus_message_iter_recurse(container, &sub_container);
             if(dbus_message_iter_get_arg_type(&sub_container) != DBUS_TYPE_INVALID){
-                values.push_back((jobject)unserialize_array(ctx,dbus_message_iter_get_element_type(container),&sub_container));
+                values.push_back((jobject)deserialize_array(ctx,dbus_message_iter_get_element_type(container),&sub_container));
             }
         }while (dbus_message_iter_next(container));
     }else if(dbus_type == DBUS_TYPE_STRUCT){
         do {
-            //recurse, unserialize and push to vector
+            //recurse, deserialize and push to vector
             DBusMessageIter sub_container;
             dbus_message_iter_recurse(container, &sub_container);
             if(dbus_message_iter_get_arg_type(&sub_container) != DBUS_TYPE_INVALID){
-                values.push_back(unserialize(ctx,&sub_container));
+                values.push_back(deserialize(ctx,&sub_container));
             }
         }while (dbus_message_iter_next(container));
     }else{
         do {
-            //unserialize and push to vector
-            jobject val = unserialize_element(ctx,container);
+            //deserialize and push to vector
+            jobject val = deserialize_element(ctx,container);
             if(val != NULL){
                 values.push_back(val);
             }
@@ -310,7 +314,71 @@ void serialize_element(context* ctx, int dbus_type, jobject object, DBusMessageI
     }
 }
 
-jobject unserialize_element(context* ctx, DBusMessageIter* container){
+/**
+ * Transfer the JVM primitive array into the container
+ */
+void serialize_primitive_array(context* ctx, int dbus_type, jarray object, int length,  DBusMessageIter* container){
+    JNIEnv* env;
+    get_env(ctx,&env);
+
+    switch(dbus_type){
+        case DBUS_TYPE_INT32:
+        {
+            jint* nativeValues = env->GetIntArrayElements((jintArray)object,NULL);
+            dbus_message_iter_append_fixed_array(container, DBUS_TYPE_INT32, &nativeValues, length);
+            env->ReleaseIntArrayElements((jintArray)object,nativeValues,JNI_ABORT);
+            break;
+        }
+        case DBUS_TYPE_BOOLEAN:
+        {
+            jboolean* nativeValues = env->GetBooleanArrayElements((jbooleanArray)object,NULL);
+            dbus_message_iter_append_fixed_array(container, DBUS_TYPE_BOOLEAN, &nativeValues, length);
+            env->ReleaseBooleanArrayElements((jbooleanArray)object,nativeValues,JNI_ABORT);
+            break;
+        }
+        case DBUS_TYPE_BYTE:
+        {
+            jbyte* nativeValues = env->GetByteArrayElements((jbyteArray)object,NULL);
+            dbus_message_iter_append_fixed_array(container, DBUS_TYPE_BYTE, &nativeValues, length);
+            env->ReleaseByteArrayElements((jbyteArray)object,nativeValues,JNI_ABORT);
+            break;
+        }
+        case DBUS_TYPE_INT16:
+        {
+            jshort* nativeValues = env->GetShortArrayElements((jshortArray)object,NULL);
+            dbus_message_iter_append_fixed_array(container, DBUS_TYPE_INT16, &nativeValues, length);
+            env->ReleaseShortArrayElements((jshortArray)object,nativeValues,JNI_ABORT);
+            break;
+        }
+        case DBUS_TYPE_INT64:
+        {
+            jlong* nativeValues = env->GetLongArrayElements((jlongArray)object,NULL);
+            dbus_message_iter_append_fixed_array(container, DBUS_TYPE_INT64, &nativeValues, length);
+            env->ReleaseLongArrayElements((jlongArray)object,nativeValues,JNI_ABORT);
+            break;
+        }
+        case DBUS_TYPE_DOUBLE:
+        {
+            jdouble* nativeValues = env->GetDoubleArrayElements((jdoubleArray)object,NULL);
+            dbus_message_iter_append_fixed_array(container, DBUS_TYPE_DOUBLE, &nativeValues, length);
+            env->ReleaseDoubleArrayElements((jdoubleArray)object,nativeValues,JNI_ABORT);
+            break;
+        }
+        case DBUS_TYPE_INVALID:
+        {
+            //ignore, we reached end of iterator
+            break;
+        }
+        default:
+        {
+            std::string error = std::string()+"Unsupported primitive type detected : "+(char)dbus_type;
+            env->ThrowNew(find_class(ctx,"java/lang/IllegalStateException"),error.c_str());
+            break;
+        }
+    }
+}
+
+jobject deserialize_element(context* ctx, DBusMessageIter* container){
     //get JVM env
     JNIEnv* env;
     get_env(ctx,&env);

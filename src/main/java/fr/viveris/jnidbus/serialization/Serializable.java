@@ -22,5 +22,5 @@ public interface Serializable {
      * @param obj values to transfer
      * @throws MessageSignatureMismatchException thrown if the param does not contain the right signature for this instance
      */
-    void unserialize(DBusObject obj) throws MessageSignatureMismatchException;
+    void deserialize(DBusObject obj) throws MessageSignatureMismatchException;
 }

@@ -18,7 +18,7 @@ public class PrimitiveSerializer extends Serializer {
     }
 
     @Override
-    public Object unserialize(Object value) {
+    public Object deserialize(Object value) {
         return value;
     }
 }

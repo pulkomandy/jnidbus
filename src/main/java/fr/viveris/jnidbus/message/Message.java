@@ -14,7 +14,7 @@ import fr.viveris.jnidbus.serialization.serializers.Serializer;
 import java.lang.reflect.Method;
 
 /**
- * Represent anything that can be sent to dbus. This class implements serialization and unserialization methods that
+ * Represent anything that can be sent to dbus. This class implements serialization and deserialization methods that
  * will use reflection and the DBusType annotation to know how to perform the serialization. As the reflection is slow
  * we use a cache to store information that will not change between serializations.
  *
@@ -65,12 +65,12 @@ public abstract class Message implements Serializable {
     }
 
     @Override
-    public void unserialize(DBusObject obj) throws MessageSignatureMismatchException {
+    public void deserialize(DBusObject obj) throws MessageSignatureMismatchException {
         //retrieve reflection data from the cache
         Class<? extends Message> clazz = this.getClass();
         MessageMetadata messageMetadata = Message.retrieveFromCache(clazz);
 
-        //check if the given pre-unserialized object have the same signature as this class
+        //check if the given pre-deserialized object have the same signature as this class
         if(!messageMetadata.getSignature().equals(obj.getSignature())) throw new MessageSignatureMismatchException("Signature mismatch, expected "+ messageMetadata.getSignature()+" but got "+obj.getSignature());
 
         int i = 0;
@@ -82,10 +82,10 @@ public abstract class Message implements Serializable {
                 //retrieve the setter from the cache
                 Method setter = messageMetadata.getSetter(fieldName);
                 Serializer serializer = messageMetadata.getFieldSerializer(fieldName);
-
-                setter.invoke(this,serializer.unserialize(value));
+                Object deserialized = serializer.deserialize(value);
+                setter.invoke(this,deserialized);
             }catch (Exception e){
-                throw new IllegalStateException("An exception was raised during serialization",e);
+                throw new IllegalStateException("An exception was raised during deserialization",e);
             }
             //go to the next value
             i++;
@@ -124,7 +124,7 @@ public abstract class Message implements Serializable {
     }
 
     /**
-     * Special type of message that do not need serialization or unserialization.
+     * Special type of message that do not need serialization or deserialization.
      */
     @DBusType(
             signature = "",

@@ -16,7 +16,7 @@ import java.util.HashMap;
 
 /**
  * A MessageMetadata contains the list of fields managed by JNIDBus, their setters and getters. In order lower the cost of
- * the heavy use of Reflection, the fields are mapped to a pair of Serializer/Unserializer which will analyze the signature
+ * the heavy use of Reflection, the fields are mapped to a pair of Serializer/deserializer which will analyze the signature
  * and type of the field, save those information and reuse them when doing the actual serialization. This mechanism speeds
  * up a lot the serialization process.
  */
@@ -43,7 +43,7 @@ public class MessageMetadata {
     private HashMap<String, Method> getters = new HashMap<>();
 
     /**
-     * Serializer and unserializers by Methods
+     * Serializer and deserializers by Methods
      */
     private HashMap<String, Serializer> fieldSerializers = new HashMap<>();
 
@@ -109,7 +109,7 @@ public class MessageMetadata {
             }
 
             try {
-                //get the setter and create its unserializer, the unserializer will check signature and type validity
+                //get the setter and create its deserializer, the deserializer will check signature and type validity
                 Method setter = clazz.getDeclaredMethod(setterName,field.getType());
                 this.setters.put(fieldName,setter);
                 if(setter.getGenericParameterTypes().length != 1){
@@ -124,6 +124,10 @@ public class MessageMetadata {
 
             this.fieldSerializers.put(fieldName,this.generateSerializerForSignature(fieldType,element,fieldName));
             i++;
+        }
+
+        if(i != this.fields.length){
+            throw new MessageCheckException("Incomplete signature, there is too much fields",this.clazz);
         }
     }
 
@@ -149,7 +153,7 @@ public class MessageMetadata {
     public Class<? extends Serializable> getMessageClass(){ return this.clazz; }
 
     /**
-     * Create a new empty instances of the Message object (for unserialization).
+     * Create a new empty instances of the Message object (for deserialization).
      *
      * @return new empty instance of the message
      */

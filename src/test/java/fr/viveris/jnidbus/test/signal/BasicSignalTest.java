@@ -53,7 +53,7 @@ public class BasicSignalTest extends DBusTestCase {
     }
 
     @Test
-    public void signalIsSerializedAndUnserialized() throws InterruptedException {
+    public void signalIsSerializedAnddeserialized() throws InterruptedException {
         SignalHandler handler = new SignalHandler();
         this.receiver.addHandler(handler);
         SingleStringMessage msg = new SingleStringMessage();

@@ -99,20 +99,20 @@ public class PendingCall<T extends Serializable> {
     }
 
     /**
-     * Unserialize the pre-unserialized object and if everything goes well, notify the listener and store the result
+     * deserialize the pre-deserialized object and if everything goes well, notify the listener and store the result
      *
-     * @param response pre-unserialized object
+     * @param response pre-deserialized object
      */
     synchronized public void notify(DBusObject response){
         try {
             T value;
-            //if the message is an EmptyMessage, don't unserialize and use the static instance
+            //if the message is an EmptyMessage, don't deserialize and use the static instance
             if(this.clazz.equals(Message.EmptyMessage.class)){
                 value = (T) Message.EMPTY;
             }else{
                 //retreive the cached entity and create a new instance of the return result
                 value = (T) Message.retrieveFromCache(this.clazz).newInstance();
-                value.unserialize(response);
+                value.deserialize(response);
             }
             this.result = value;
             //if the listener is registered and that the PendingCall was not previously failed, notify
