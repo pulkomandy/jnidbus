@@ -3,6 +3,8 @@
  */
 package fr.viveris.jnidbus.serialization.signature;
 
+import java.lang.reflect.Array;
+
 /**
  * List of the types supported by the library, primitive or container
  */
@@ -35,6 +37,12 @@ public enum SupportedTypes {
     }
     public Class getPrimitiveType(){ return this.primitiveType; }
     public Class getBoxedType(){ return this.boxedType; }
+    public Class getPrimitiveArrayType(){
+        return Array.newInstance(this.primitiveType, 0).getClass();
+    }
+    public Class getBoxedArrayType(){
+        return Array.newInstance(this.boxedType, 0).getClass();
+    }
 
 
     /**

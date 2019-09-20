@@ -49,6 +49,10 @@ public class SignatureElement {
         return this.containerType == SupportedTypes.OBJECT_BEGIN;
     }
 
+    public boolean isDictEntry(){
+        return this.containerType == SupportedTypes.OBJECT_BEGIN;
+    }
+
     public Signature getSignature(){
         return new Signature(this.signature);
     }

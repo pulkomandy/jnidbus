@@ -4,23 +4,21 @@
 package fr.viveris.jnidbus.cache;
 
 import fr.viveris.jnidbus.exception.MessageCheckException;
-import fr.viveris.jnidbus.message.Message;
 import fr.viveris.jnidbus.serialization.DBusType;
 import fr.viveris.jnidbus.serialization.Serializable;
+import fr.viveris.jnidbus.serialization.serializers.*;
 import fr.viveris.jnidbus.serialization.signature.Signature;
 import fr.viveris.jnidbus.serialization.signature.SignatureElement;
 import fr.viveris.jnidbus.serialization.signature.SupportedTypes;
 
 import java.lang.reflect.*;
 import java.util.HashMap;
-import java.util.List;
 
 /**
- * A MessageMetadata contains all the data available through reflection that are used for the serialization and unserialization
- * process. This optimizes the process and allows the library to do a lot of checks on the Messages classes without any
- * cost at runtime.
- *
- * The class caches: getters, setters, annotation data and constructor instance for faster instantiation
+ * A MessageMetadata contains the list of fields managed by JNIDBus, their setters and getters. In order lower the cost of
+ * the heavy use of Reflection, the fields are mapped to a pair of Serializer/Unserializer which will analyze the signature
+ * and type of the field, save those information and reuse them when doing the actual serialization. This mechanism speeds
+ * up a lot the serialization process.
  */
 public class MessageMetadata {
     /**
@@ -45,6 +43,11 @@ public class MessageMetadata {
     private HashMap<String, Method> getters = new HashMap<>();
 
     /**
+     * Serializer and unserializers by Methods
+     */
+    private HashMap<String, Serializer> fieldSerializers = new HashMap<>();
+
+    /**
      * Message class object
      */
     private Class<? extends Serializable> clazz;
@@ -62,14 +65,14 @@ public class MessageMetadata {
 
         //check annotation
         DBusType type = clazz.getAnnotation(DBusType.class);
-        if(type == null) throw new IllegalStateException("No DBusType annotation found");
+        if(type == null) throw new MessageCheckException("no DBusType annotation found",this.clazz);
 
         //check constructor
         Constructor<? extends Serializable> constructor;
         try {
             constructor = clazz.getConstructor();
         } catch (NoSuchMethodException e) {
-            throw new IllegalStateException("No public empty constructor found");
+            throw new MessageCheckException("No public empty constructor found",this.clazz);
         }
 
         //create a new cache entity
@@ -89,26 +92,37 @@ public class MessageMetadata {
             try{
                 field = clazz.getDeclaredField(fieldName);
             }catch (Exception e){
-                throw new MessageCheckException("Could not find the field "+fieldName);
+                throw new MessageCheckException("Could not find field",this.clazz,fieldName);
             }
 
-            //check the field against the annotation signature
-            MessageMetadata.checkField(field,field.getGenericType(),element);
+            Type fieldType = field.getGenericType();
 
             try {
+                //get the getter and create its serializer, the serializer will check signature and type validity
                 Method getter = clazz.getDeclaredMethod(getterName);
                 this.getters.put(fieldName,getter);
+                if(!fieldType.equals(getter.getGenericReturnType())){
+                    throw new MessageCheckException("The getter return type is not the same as the field",this.clazz,fieldName);
+                }
             } catch (NoSuchMethodException e) {
-                throw new MessageCheckException("Could not find the getter for the field "+fieldName);
+                throw new MessageCheckException("Could not find getter",this.clazz,fieldName);
             }
 
             try {
+                //get the setter and create its unserializer, the unserializer will check signature and type validity
                 Method setter = clazz.getDeclaredMethod(setterName,field.getType());
                 this.setters.put(fieldName,setter);
+                if(setter.getGenericParameterTypes().length != 1){
+                    throw new MessageCheckException("The setter must only have one parameter",this.clazz,fieldName);
+                }
+                if(!fieldType.equals(setter.getGenericParameterTypes()[0])){
+                    throw new MessageCheckException("The setter return type is not the same as the field",this.clazz,fieldName);
+                }
             } catch (NoSuchMethodException e) {
-                throw new MessageCheckException("Could not find the setter for the field "+fieldName);
+                throw new MessageCheckException("Could not find setter",this.clazz,fieldName);
             }
 
+            this.fieldSerializers.put(fieldName,this.generateSerializerForSignature(fieldType,element,fieldName));
             i++;
         }
     }
@@ -117,6 +131,9 @@ public class MessageMetadata {
         return this.getters.get(fieldName);
     }
 
+    public Serializer getFieldSerializer(String fieldName){
+        return this.fieldSerializers.get(fieldName);
+    }
     public Method getSetter(String fieldName){
         return this.setters.get(fieldName);
     }
@@ -145,42 +162,45 @@ public class MessageMetadata {
     }
 
     /**
-     * Check if the given field is valid according to the given signature element
-     *
-     * @param field field to check
-     * @param element signature element used to check
+     * This method will try to find a serializer matching a generic type and a signature, the created serializer will
+     * perform all the necessary checks and try to find incoherence.
+     * @param genericType the Type of the method, could be a parametrized type or standard one
+     * @param element
+     * @return
      * @throws MessageCheckException
      */
-    private static void checkField(Field field, Type fieldType, SignatureElement element) throws MessageCheckException{
-        //get primitive will catch primitive fields and primitive arrays
-        if(element.getPrimitive() != null){
-            boolean isList = fieldType instanceof ParameterizedType;
-            //check the generic is a List and if it matched the signature
-            if(isList && (!List.class.isAssignableFrom((Class)((ParameterizedType)fieldType).getRawType()) || element.getContainerType() != SupportedTypes.ARRAY))
-                throw new MessageCheckException("the field "+field.getName()+" is not of a List or the signature is not expecting a list");
+    private Serializer generateSerializerForSignature(Type genericType, SignatureElement element, String fieldName) throws MessageCheckException {
+        //TypeVariables are not usable and should not be allowed
+        if(genericType instanceof TypeVariable) throw new MessageCheckException("Unspecified generic type found",this.clazz,fieldName);
 
-            //check if the generic type contains the correct type
-            SupportedTypes type = element.getPrimitive();
-            if(isList){
-                ParameterizedType paramType = (ParameterizedType) fieldType;
-                if(!paramType.getActualTypeArguments()[0].equals(type.getBoxedType()) && !paramType.getActualTypeArguments()[0].equals(type.getPrimitiveType()))
-                    throw new MessageCheckException("the field "+field.getName()+" is not of a List of Integer");
-            }else {
-                if (!fieldType.equals(type.getBoxedType()) && !fieldType.equals(type.getPrimitiveType())) throw new MessageCheckException("the field " + field.getName() + " is not of type "+type);
+        //if the method returns a generic type, extract it, this allows us to support generic messages and nested lists
+        Class<?> clazz;
+        if(genericType instanceof ParameterizedType){
+            clazz = (Class<?>) ((ParameterizedType)genericType).getRawType();
+        }else{
+            clazz = (Class<?>) genericType;
+        }
+
+        //if we have an array container type and a primitive type, it means we have a primitive array
+        if(element.getContainerType() == SupportedTypes.ARRAY && element.getPrimitive() != null){
+            return new PrimitiveArraySerializer(clazz,element,this.clazz,fieldName);
+
+        // if there is a primitive type but no container, we have a primitive type
+        }else if(element.getContainerType() == null && element.getPrimitive() != null){
+            return new PrimitiveSerializer(clazz,element,this.clazz,fieldName);
+
+        //as we checked for primitive arrays before, if there is an array container type it means we have a complex array
+        }else if(element.getContainerType() == SupportedTypes.ARRAY){
+            return new ComplexArraySerializer(genericType,element,this.clazz,fieldName);
+
+        //if there is no primitive type and an object container type, we have an object
+        }else if(element.getContainerType() == SupportedTypes.OBJECT_BEGIN){
+            if(!Serializable.class.isAssignableFrom(clazz)){
+                throw new MessageCheckException("Field not Serializable",this.clazz,fieldName);
             }
-        }else if(element.isArray()){
-            //recursively check the content of the nested list
-            MessageMetadata.checkField(field,((ParameterizedType)fieldType).getActualTypeArguments()[0],element.getSignature().getFirst());
-
-        }else if(element.isObject()){
-            if(!Serializable.class.isAssignableFrom((Class)fieldType)) throw new MessageCheckException("the field "+field.getName()+" does not contain a serializable type");
-
-            Class<? extends Serializable> clazz = ((Class)fieldType).asSubclass(Serializable.class);
-            MessageMetadata testedEntity = new MessageMetadata(clazz);
-            Message.addToCache(clazz,testedEntity);
-
-            if(!testedEntity.getSignature().equals(element.getSignatureString()))
-                throw new MessageCheckException("the field "+field.getName()+" signature do not match its type signature");
+            return new ObjectSerializer(clazz.asSubclass(Serializable.class), element,this.clazz,fieldName);
+        }else{
+            throw new MessageCheckException("The given type could not be mapped to any serializer",this.clazz,fieldName);
         }
     }
 }
