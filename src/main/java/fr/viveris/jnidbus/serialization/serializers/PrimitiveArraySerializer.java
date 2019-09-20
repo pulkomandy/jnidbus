@@ -10,6 +10,7 @@ import java.util.List;
 
 public class PrimitiveArraySerializer extends Serializer {
     private boolean isNativeArray;
+    private boolean isObjectArray;
     private Class expectedArrayType;
     private Class expectedValueType;
 
@@ -17,6 +18,7 @@ public class PrimitiveArraySerializer extends Serializer {
         super(signature, managedClass, managedFieldName);
         this.expectedArrayType = expectedType;
         this.expectedValueType = expectedType.getComponentType();
+        this.isObjectArray = this.expectedValueType != null && Object.class.isAssignableFrom(this.expectedValueType);
         this.isNativeArray = expectedType.isAssignableFrom(signature.getPrimitive().getBoxedArrayType()) ||
                 expectedType.isAssignableFrom(signature.getPrimitive().getPrimitiveArrayType());
 
@@ -36,7 +38,7 @@ public class PrimitiveArraySerializer extends Serializer {
 
         if(this.isNativeArray) {
             if(values.length == 0) return Array.newInstance(this.expectedValueType,0);
-            else if(Object.class.isAssignableFrom(this.expectedValueType)){
+            else if(this.isObjectArray){
                 return Arrays.copyOf(values,values.length,this.expectedArrayType);
             }else{
                 Object array = Array.newInstance(this.expectedValueType,values.length);
