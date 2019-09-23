@@ -164,26 +164,31 @@ void serialize_array(context* ctx, int dbus_type, jobjectArray array, DBusMessag
         DBusSignatureIter sub_signature;
         dbus_signature_iter_recurse(signature,&sub_signature);
         char* charSignature = dbus_signature_iter_get_signature(&sub_signature);
-        DBusMessageIter sub_container;
-        dbus_message_iter_open_container(container,DBUS_TYPE_ARRAY,charSignature,&sub_container);
-        dbus_free(charSignature);
 
         //iterate through the array
         int i = 0;
         jobject valueJVM;
-        while(i < array_length){
+        do{
             //get object to serialize
             valueJVM = env->GetObjectArrayElement(array,i++);
-            //as DBus does not give the possibility to reset an iterator, the sub signature will become invalid
-            //on the next iteration, to prevent this we must memcopy the orignal each time
-            DBusSignatureIter sub_signature_copy;
-            memcpy(&sub_signature_copy,&sub_signature,sizeof(DBusSignatureIter));
-            serialize_array(ctx,dbus_signature_iter_get_current_type(&sub_signature),(jobjectArray) valueJVM, &sub_container,&sub_signature_copy);
-            //advise the JVM we don't need this object anymore
-            env->DeleteLocalRef(valueJVM);
-        }
+            DBusMessageIter sub_container;
+            dbus_message_iter_open_container(container,DBUS_TYPE_ARRAY,charSignature,&sub_container);
 
-        dbus_message_iter_close_container(container,&sub_container);
+            if(valueJVM != NULL && !env->ExceptionOccurred()){
+                //as DBus does not give the possibility to reset an iterator, the sub signature will become invalid
+                //on the next iteration, to prevent this we must memcopy the orignal each time
+                DBusSignatureIter sub_signature_copy;
+                memcpy(&sub_signature_copy,&sub_signature,sizeof(DBusSignatureIter));
+                serialize_array(ctx,dbus_signature_iter_get_current_type(&sub_signature),(jobjectArray) valueJVM, &sub_container,&sub_signature_copy);
+                //advise the JVM we don't need this object anymore
+                env->DeleteLocalRef(valueJVM);
+            }
+            
+            dbus_message_iter_close_container(container,&sub_container);
+            env->ExceptionClear();
+        }while(i < array_length);
+
+        dbus_free(charSignature);
         
     }else if(dbus_type == DBUS_TYPE_STRUCT){
         //signatures can't be reset, so we memcopy it at each iteration
