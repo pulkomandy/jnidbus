@@ -344,9 +344,11 @@ suspend fun suspendingDBusCall() : SingleStringMessage{
 
 
 
-## Planned features
+## Planned tasks
 
 - Support `DICT_ENTRY` type
+- Support `OBJECT_PATH` type
+- Refactor `serialization.cpp` to use proper OOP and cleanup the code
 - Use direct `ByteBuffer` instead of plain `Object` arrays to avoid copies.
 
 ## FAQ

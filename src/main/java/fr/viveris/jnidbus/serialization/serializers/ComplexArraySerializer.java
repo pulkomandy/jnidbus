@@ -70,9 +70,17 @@ public class ComplexArraySerializer extends Serializer{
                 this.nestedSerializer = new ObjectSerializer(nestedObjectClass,valueSignature, this.managedClass, this.managedFieldName);
             }else{
                 if(this.isPrimitiveArray){
-                    this.nestedSerializer = new ComplexArraySerializer(arrayValueClass,valueSignature, this.managedClass, this.managedFieldName);
+                    if(valueType.getContainerType() == SupportedTypes.DICT_ENTRY_BEGIN){
+                        this.nestedSerializer = new MapSerializer(arrayValueClass,valueSignature, this.managedClass, this.managedFieldName);
+                    }else{
+                        this.nestedSerializer = new ComplexArraySerializer(arrayValueClass,valueSignature, this.managedClass, this.managedFieldName);
+                    }
                 }else{
-                    this.nestedSerializer = new ComplexArraySerializer(((ParameterizedType)genericType).getActualTypeArguments()[0],valueSignature,this.managedClass,this.managedFieldName);
+                    if(valueType.getContainerType() == SupportedTypes.DICT_ENTRY_BEGIN){
+                        this.nestedSerializer = new MapSerializer(((ParameterizedType)genericType).getActualTypeArguments()[0],valueSignature,this.managedClass,this.managedFieldName);
+                    }else{
+                        this.nestedSerializer = new ComplexArraySerializer(((ParameterizedType)genericType).getActualTypeArguments()[0],valueSignature,this.managedClass,this.managedFieldName);
+                    }
                 }
             }
 

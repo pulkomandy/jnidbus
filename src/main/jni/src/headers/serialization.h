@@ -21,7 +21,11 @@ void serialize(context* ctx, jobject message, DBusMessageIter* container);
  */ 
 jobject deserialize(context* ctx, DBusMessageIter* container);
 
-
+/**
+ * serialize a JVM dbus_object array of values given the signature, allwos us to use dbus built-in
+ * signature functions instead of calling the JVM for the one of the DBusObject (better for performances)
+ */
+void serialize_struct(context* ctx, jobjectArray message, DBusMessageIter* container, DBusSignatureIter* signatureIter);
 
 /**
  * Transfer the JVM array into the container

@@ -193,16 +193,23 @@ public class MessageMetadata {
         }else if(element.getContainerType() == null && element.getPrimitive() != null){
             return new PrimitiveSerializer(clazz,element,this.clazz,fieldName);
 
-        //as we checked for primitive arrays before, if there is an array container type it means we have a complex array
+        //as we checked for primitive arrays before, if there is an array container type it means we have a complex array or a map
         }else if(element.getContainerType() == SupportedTypes.ARRAY){
-            return new ComplexArraySerializer(genericType,element,this.clazz,fieldName);
+            //check first element type to se if we have a Map
+            if(element.getSignature().getFirst().getContainerType() == SupportedTypes.DICT_ENTRY_BEGIN){
+                return new MapSerializer(genericType,element,this.clazz,fieldName);
+            }else{
+                return new ComplexArraySerializer(genericType,element,this.clazz,fieldName);
+            }
 
         //if there is no primitive type and an object container type, we have an object
-        }else if(element.getContainerType() == SupportedTypes.OBJECT_BEGIN){
-            if(!Serializable.class.isAssignableFrom(clazz)){
-                throw new MessageCheckException("Field not Serializable",this.clazz,fieldName);
+        }else if(element.getContainerType() == SupportedTypes.OBJECT_BEGIN) {
+            if (!Serializable.class.isAssignableFrom(clazz)) {
+                throw new MessageCheckException("Field not Serializable", this.clazz, fieldName);
             }
-            return new ObjectSerializer(clazz.asSubclass(Serializable.class), element,this.clazz,fieldName);
+            return new ObjectSerializer(clazz.asSubclass(Serializable.class), element, this.clazz, fieldName);
+        }else if( element.getContainerType() == SupportedTypes.DICT_ENTRY_BEGIN){
+            throw new MessageCheckException("A dict_entry can not be placed outside of an array", this.clazz, fieldName);
         }else{
             throw new MessageCheckException("The given type could not be mapped to any serializer",this.clazz,fieldName);
         }
