@@ -3,8 +3,6 @@
  */
 package fr.viveris.jnidbus.cache;
 
-import fr.viveris.jnidbus.remote.RemoteInterface;
-import fr.viveris.jnidbus.remote.RemoteMember;
 import fr.viveris.jnidbus.remote.Signal;
 
 public class SignalMetadata {

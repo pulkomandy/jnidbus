@@ -5,16 +5,6 @@ package fr.viveris.jnidbus.test.serialization;
 
 import fr.viveris.jnidbus.test.common.DBusObjects.arrays.NestedPrimitiveArray;
 import fr.viveris.jnidbus.test.common.DBusObjects.arrays.PrimitiveArray;
-import fr.viveris.jnidbus.test.common.DBusObjects.CollectionArray;
-import fr.viveris.jnidbus.test.common.DBusObjects.CollectionOfCollectionArray;
-import fr.viveris.jnidbus.dispatching.GenericHandler;
-import fr.viveris.jnidbus.dispatching.MemberType;
-import fr.viveris.jnidbus.dispatching.annotation.Handler;
-import fr.viveris.jnidbus.dispatching.annotation.HandlerMethod;
-import fr.viveris.jnidbus.remote.RemoteInterface;
-import fr.viveris.jnidbus.remote.RemoteMember;
-import fr.viveris.jnidbus.remote.Signal;
-import fr.viveris.jnidbus.serialization.DBusObject;
 import fr.viveris.jnidbus.test.common.handlers.arrays.NestedPrimitiveArrayHandler;
 import fr.viveris.jnidbus.test.common.handlers.arrays.PrimitiveArrayHandler;
 import org.junit.Test;
@@ -22,10 +12,9 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 public class ArraySerializationTest extends SerializationTestCase {
 

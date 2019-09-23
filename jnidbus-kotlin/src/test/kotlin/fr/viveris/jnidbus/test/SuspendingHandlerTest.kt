@@ -1,7 +1,5 @@
 package fr.viveris.jnidbus.test
 
-import fr.viveris.jnidbus.test.common.DBusObjects.SingleStringMessage
-import fr.viveris.jnidbus.test.common.DBusTestCase
 import fr.viveris.jnidbus.await
 import fr.viveris.jnidbus.dispatching.KotlinGenericHandler
 import fr.viveris.jnidbus.dispatching.KotlinMethodInvocator
@@ -12,7 +10,11 @@ import fr.viveris.jnidbus.message.Message
 import fr.viveris.jnidbus.message.PendingCall
 import fr.viveris.jnidbus.remote.RemoteInterface
 import fr.viveris.jnidbus.remote.RemoteMember
-import kotlinx.coroutines.*
+import fr.viveris.jnidbus.test.common.DBusObjects.SingleStringMessage
+import fr.viveris.jnidbus.test.common.DBusTestCase
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

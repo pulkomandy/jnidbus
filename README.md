@@ -347,16 +347,17 @@ suspend fun suspendingDBusCall() : SingleStringMessage{
 ## Planned features
 
 - Support `DICT_ENTRY` type
+- Use direct `ByteBuffer` instead of plain `Object` arrays to avoid copies.
 
 ## FAQ
 
 ##### Which java versions are compatible?
 
-Java 7 and Java 11 where tested. You will also need `libc` and `libdbus-1` to run the native code 
+Java 8 to Java 11 are tested by the CI, Java 7 should run but is not tested. You will also need `libc` and `libdbus-1` to run the native code 
 
 ##### How fast is this library
 
-I was able to get around 35k complex signals (nested lists and objects) sent and received on a single event loop on my modest i3-4130 work machine. I was able to get around 58k empty signals with the same setup. This should satisfy most of the use cases so unless you really need to push DBus to its limit it's enough.
+I was able to get around 40k "complex" signals sent and received on a single event loop on my modest i3-4130 work machine. I was able to get around 95k empty signals with the same setup. This should satisfy most of the use cases so unless you really need to push DBus to its limit it's enough.
 
 ##### I found a bug
 

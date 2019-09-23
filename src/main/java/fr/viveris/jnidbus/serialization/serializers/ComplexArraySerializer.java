@@ -3,7 +3,6 @@ package fr.viveris.jnidbus.serialization.serializers;
 import fr.viveris.jnidbus.cache.MessageMetadata;
 import fr.viveris.jnidbus.exception.MessageCheckException;
 import fr.viveris.jnidbus.exception.MessageSignatureMismatchException;
-import fr.viveris.jnidbus.exception.SerializationException;
 import fr.viveris.jnidbus.message.Message;
 import fr.viveris.jnidbus.serialization.DBusObject;
 import fr.viveris.jnidbus.serialization.Serializable;

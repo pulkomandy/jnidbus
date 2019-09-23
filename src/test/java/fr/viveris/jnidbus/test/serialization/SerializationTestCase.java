@@ -1,6 +1,5 @@
 package fr.viveris.jnidbus.test.serialization;
 
-import fr.viveris.jnidbus.remote.Signal;
 import fr.viveris.jnidbus.serialization.Serializable;
 import fr.viveris.jnidbus.test.common.DBusTestCase;
 import fr.viveris.jnidbus.test.common.handlers.CommonHandler;

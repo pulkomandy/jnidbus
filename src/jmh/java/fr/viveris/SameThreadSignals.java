@@ -3,9 +3,6 @@
  */
 package fr.viveris;
 
-import fr.viveris.jnidbus.test.common.DBusObjects.ArrayRecursiveObject;
-import fr.viveris.jnidbus.test.common.DBusObjects.SimpleMessage;
-import fr.viveris.jnidbus.test.common.DBusTestCase;
 import fr.viveris.jnidbus.BusType;
 import fr.viveris.jnidbus.Dbus;
 import fr.viveris.jnidbus.bindings.bus.EventLoop;
@@ -18,6 +15,9 @@ import fr.viveris.jnidbus.message.Message;
 import fr.viveris.jnidbus.remote.RemoteInterface;
 import fr.viveris.jnidbus.remote.RemoteMember;
 import fr.viveris.jnidbus.remote.Signal;
+import fr.viveris.jnidbus.test.common.DBusObjects.ArrayRecursiveObject;
+import fr.viveris.jnidbus.test.common.DBusObjects.SimpleMessage;
+import fr.viveris.jnidbus.test.common.DBusTestCase;
 import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.CountDownLatch;

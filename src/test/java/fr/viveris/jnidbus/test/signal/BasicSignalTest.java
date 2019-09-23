@@ -1,7 +1,5 @@
 package fr.viveris.jnidbus.test.signal;
 
-import fr.viveris.jnidbus.test.common.DBusTestCase;
-import fr.viveris.jnidbus.test.common.DBusObjects.SingleStringMessage;
 import fr.viveris.jnidbus.dispatching.GenericHandler;
 import fr.viveris.jnidbus.dispatching.MemberType;
 import fr.viveris.jnidbus.dispatching.annotation.Handler;
@@ -10,6 +8,8 @@ import fr.viveris.jnidbus.message.Message;
 import fr.viveris.jnidbus.remote.RemoteInterface;
 import fr.viveris.jnidbus.remote.RemoteMember;
 import fr.viveris.jnidbus.remote.Signal;
+import fr.viveris.jnidbus.test.common.DBusObjects.SingleStringMessage;
+import fr.viveris.jnidbus.test.common.DBusTestCase;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;

@@ -3,7 +3,7 @@ package fr.viveris.jnidbus.dispatching
 import fr.viveris.jnidbus.message.Promise
 import fr.viveris.jnidbus.serialization.DBusType
 import fr.viveris.jnidbus.serialization.Serializable
-import java.util.HashMap
+import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.declaredMemberFunctions
