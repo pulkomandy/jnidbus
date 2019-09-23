@@ -218,13 +218,12 @@ void serialize_array(context* ctx, int dbus_type, jobjectArray array, DBusMessag
     }else if(dbus_type == DBUS_TYPE_DICT_ENTRY){
         DBusSignatureIter sub_signature;
         dbus_signature_iter_recurse(signature,&sub_signature);
-        char* charSignature = dbus_signature_iter_get_signature(&sub_signature);
         //iterate through the array
         int i = 0;
         jobject valueJVM;
         while(i < array_length){
             DBusMessageIter sub_container;
-            dbus_message_iter_open_container(container,DBUS_TYPE_DICT_ENTRY,charSignature,&sub_container);
+            dbus_message_iter_open_container(container,DBUS_TYPE_DICT_ENTRY,NULL,&sub_container);
             //get object to serialize
             valueJVM = env->GetObjectArrayElement(array,i++);
             DBusSignatureIter sub_signature_copy;
@@ -239,7 +238,6 @@ void serialize_array(context* ctx, int dbus_type, jobjectArray array, DBusMessag
             dbus_message_iter_close_container(container,&sub_container);
             env->DeleteLocalRef(valueJVM);
         }
-        dbus_free(charSignature);
     }else{
         if(env->IsInstanceOf(array,find_array_class(ctx,"java/lang/Object")) == JNI_FALSE){
             serialize_primitive_array(ctx,dbus_type,array,array_length,container);
