@@ -171,6 +171,11 @@ void serialize_array(context* ctx, int dbus_type, jobjectArray array, DBusMessag
         do{
             //get object to serialize
             valueJVM = env->GetObjectArrayElement(array,i++);
+
+            //DBus STRUCT containers do not have any signature as it is inferred from the values signature, we have to
+            //make sure we open at least one container with the correct signature so the message signature is correct
+            //to do that we try to get the element from the array and check if it's null or if an exception occurred
+            //to decide if we actually have a value to process
             DBusMessageIter sub_container;
             dbus_message_iter_open_container(container,DBUS_TYPE_ARRAY,charSignature,&sub_container);
 
@@ -189,8 +194,9 @@ void serialize_array(context* ctx, int dbus_type, jobjectArray array, DBusMessag
         }while(i < array_length);
 
         dbus_free(charSignature);
-        
-    }else if(dbus_type == DBUS_TYPE_STRUCT){
+
+    //struct and dict_entries are processed in the same way
+    }else if(dbus_type == DBUS_TYPE_STRUCT || dbus_type == DBUS_TYPE_DICT_ENTRY){
         //signatures can't be reset, so we memcopy it at each iteration
         DBusSignatureIter sub_signature;
         dbus_signature_iter_recurse(signature,&sub_signature);
@@ -208,29 +214,6 @@ void serialize_array(context* ctx, int dbus_type, jobjectArray array, DBusMessag
 
             //get array of values adns erialize them using the signature
             const char* dbus_object_class_name = "fr/viveris/jnidbus/serialization/DBusObject";
-            jclass dbusObjectClass = find_class(ctx,dbus_object_class_name);
-            jobjectArray dbusValues = (jobjectArray) env->GetObjectField(valueJVM, find_field(ctx,dbus_object_class_name,"values", "[Ljava/lang/Object;"));
-
-            serialize_struct(ctx,dbusValues,&sub_container,&sub_signature_copy);
-            dbus_message_iter_close_container(container,&sub_container);
-            env->DeleteLocalRef(valueJVM);
-        }
-    }else if(dbus_type == DBUS_TYPE_DICT_ENTRY){
-        DBusSignatureIter sub_signature;
-        dbus_signature_iter_recurse(signature,&sub_signature);
-        //iterate through the array
-        int i = 0;
-        jobject valueJVM;
-        while(i < array_length){
-            DBusMessageIter sub_container;
-            dbus_message_iter_open_container(container,DBUS_TYPE_DICT_ENTRY,NULL,&sub_container);
-            //get object to serialize
-            valueJVM = env->GetObjectArrayElement(array,i++);
-            DBusSignatureIter sub_signature_copy;
-            memcpy(&sub_signature_copy,&sub_signature,sizeof(DBusSignatureIter));
-            //recursive call
-
-             const char* dbus_object_class_name = "fr/viveris/jnidbus/serialization/DBusObject";
             jclass dbusObjectClass = find_class(ctx,dbus_object_class_name);
             jobjectArray dbusValues = (jobjectArray) env->GetObjectField(valueJVM, find_field(ctx,dbus_object_class_name,"values", "[Ljava/lang/Object;"));
 
@@ -272,7 +255,7 @@ jobjectArray deserialize_array(context* ctx, int dbus_type, DBusMessageIter* con
                 values.push_back((jobject)deserialize_array(ctx,dbus_message_iter_get_element_type(container),&sub_container));
             }
         }while (dbus_message_iter_next(container));
-    }else if(dbus_type == DBUS_TYPE_STRUCT){
+    }else if(dbus_type == DBUS_TYPE_STRUCT || dbus_type == DBUS_TYPE_DICT_ENTRY){
         do {
             //recurse, deserialize and push to vector
             DBusMessageIter sub_container;
@@ -281,15 +264,6 @@ jobjectArray deserialize_array(context* ctx, int dbus_type, DBusMessageIter* con
                 values.push_back(deserialize(ctx,&sub_container));
             }
         }while (dbus_message_iter_next(container));
-    }else if(dbus_type == DBUS_TYPE_DICT_ENTRY){
-        do {
-            //recurse, deserialize and push to vector
-            DBusMessageIter sub_container;
-            dbus_message_iter_recurse(container, &sub_container);
-            if(dbus_message_iter_get_arg_type(&sub_container) != DBUS_TYPE_INVALID){
-                values.push_back(deserialize(ctx,&sub_container));
-            }
-        }while (dbus_message_iter_next(container));    
     }else{
         do {
             //deserialize and push to vector
@@ -378,6 +352,7 @@ void serialize_primitive_array(context* ctx, int dbus_type, jarray object, int l
     JNIEnv* env;
     get_env(ctx,&env);
 
+    //JVM primitive arrays can be mapped to a proper memory region, easily processable by DBus for more efficiency
     switch(dbus_type){
         case DBUS_TYPE_INT32:
         {

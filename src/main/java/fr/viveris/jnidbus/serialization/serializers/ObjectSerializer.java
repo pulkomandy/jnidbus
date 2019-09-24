@@ -8,11 +8,15 @@ import fr.viveris.jnidbus.serialization.DBusObject;
 import fr.viveris.jnidbus.serialization.Serializable;
 import fr.viveris.jnidbus.serialization.signature.SignatureElement;
 
+/**
+ * The ObjectSerializer simply call the serialize/deserialize methods on the value
+ */
 public class ObjectSerializer extends Serializer {
     private MessageMetadata metadata;
 
     public ObjectSerializer(Class<? extends Serializable> clazz,SignatureElement signature, Class managedClass, String managedFieldName) throws MessageCheckException {
         super(signature, managedClass, managedFieldName);
+        //add message metadata to cache and store the metadata object
         MessageMetadata testedEntity = new MessageMetadata(clazz);
         Message.addToCache(clazz,testedEntity);
         this.metadata = testedEntity;
@@ -25,7 +29,6 @@ public class ObjectSerializer extends Serializer {
 
     @Override
     public Object deserialize(Object value) throws MessageSignatureMismatchException {
-        if(!(value instanceof DBusObject)) throw new IllegalStateException("Unexpected object class, expected DBusObject");
         Serializable deserialized = this.metadata.newInstance();
         deserialized.deserialize(new DBusObject(this.signature.getSignatureString(),((DBusObject)value).getValues()));
         return deserialized;

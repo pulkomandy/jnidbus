@@ -116,6 +116,32 @@ public class CollectionOfCollectionArray extends Message {
 }
 ```
 
+### Dictionaries (`Maps`)
+
+The DBus arrays of `dict_entries` are mapped to the `Map` class, the key must be a primitive DBus type (refer to the DBus documentation for a definition of primitive) and its value can contain nested objects, arrays or maps.  As for the `List`, the generic types must be explicitly used in the getters/setters.
+
+*<u>example for a map message:</u>*
+
+```java
+@DBusType(
+    /* This signature correspond to an array containing dict_entries of a string and an        * integer. In the java world, it's a Map with a string as key and integers as values
+     */
+    signature = "a{si}",
+    fields = "map"
+)
+public class MapMessage extends Message {
+    private Map<String,Integer> map;
+
+    //always explicitly give the precise generic type
+    public Map<String,Integer> getMap() ...
+        
+	//for setters too
+    public void setMap(Map<String,Integer> map) ...
+}
+```
+
+
+
 ### The EmptyMessage
 
 if your message does not contain any data, the `Message` class contains a static `EMPTY` property which contains an empty Message that can be used. Using this object allows some internal optimizations and it is recommended to use it whenever you can.
@@ -349,6 +375,7 @@ suspend fun suspendingDBusCall() : SingleStringMessage{
 - Support `DICT_ENTRY` type
 - Support `OBJECT_PATH` type
 - Refactor `serialization.cpp` to use proper OOP and cleanup the code
+- Add the capability to create downcasted typed array in JNI code instead of plain `Object[]` objects
 - Use direct `ByteBuffer` instead of plain `Object` arrays to avoid copies.
 
 ## FAQ

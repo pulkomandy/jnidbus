@@ -3,6 +3,9 @@ package fr.viveris.jnidbus.serialization.serializers;
 import fr.viveris.jnidbus.exception.MessageCheckException;
 import fr.viveris.jnidbus.serialization.signature.SignatureElement;
 
+/**
+ * The PrimitiveSerializer doesn't do much beside checking the expected type of value
+ */
 public class PrimitiveSerializer extends Serializer {
     public PrimitiveSerializer(Class<?> expectedType, SignatureElement signatureElement, Class managedClass, String managedFieldName) throws MessageCheckException {
         super(signatureElement,managedClass,managedFieldName );
