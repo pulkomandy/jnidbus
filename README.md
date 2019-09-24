@@ -372,7 +372,6 @@ suspend fun suspendingDBusCall() : SingleStringMessage{
 
 ## Planned tasks
 
-- Support `DICT_ENTRY` type
 - Support `OBJECT_PATH` type
 - Refactor `serialization.cpp` to use proper OOP and cleanup the code
 - Add the capability to create downcasted typed array in JNI code instead of plain `Object[]` objects
@@ -386,7 +385,7 @@ Java 8 to Java 11 are tested by the CI, Java 7 should run but is not tested. You
 
 ##### How fast is this library
 
-I was able to get around 40k "complex" signals sent and received on a single event loop on my modest i3-4130 work machine. I was able to get around 95k empty signals with the same setup. This should satisfy most of the use cases so unless you really need to push DBus to its limit it's enough.
+I was able to get around 40k/s "complex" signals sent and received on a single event loop on my modest i3-4130 work machine. I was able to get around 95k/s empty signals with the same setup. This should satisfy most of the use cases so unless you really need to push DBus to its limit it's enough.
 
 ##### I found a bug
 
