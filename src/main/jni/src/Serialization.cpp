@@ -291,10 +291,11 @@ void serialize_element(context* ctx, int dbus_type, jobject object, DBusMessageI
     
     switch(dbus_type){
         case DBUS_TYPE_STRING:
+        case DBUS_TYPE_OBJECT_PATH:
         {
             //get native string, add and release
             const char* valueNative = env->GetStringUTFChars((jstring)object, 0);
-            dbus_message_iter_append_basic(container, DBUS_TYPE_STRING, &valueNative);
+            dbus_message_iter_append_basic(container, dbus_type, &valueNative);
             env->ReleaseStringUTFChars((jstring) object, valueNative);
             break;
         }
@@ -417,6 +418,7 @@ jobject deserialize_element(context* ctx, DBusMessageIter* container){
 
     switch(dbus_message_iter_get_arg_type(container)){
         case DBUS_TYPE_STRING:
+        case DBUS_TYPE_OBJECT_PATH:
         {
             char* value;
             dbus_message_iter_get_basic(container, &value);

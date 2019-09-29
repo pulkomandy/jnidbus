@@ -85,4 +85,14 @@ public class PrimitiveTypesSerializationTest extends SerializationTestCase {
         assertEquals(2.2,received.getBoxed(),0);
         assertEquals(3.3,received.getList().get(0),0);
     }
+
+    @Test
+    public void objectPathTest() throws InterruptedException {
+        ObjectPathMessage msg = new ObjectPathMessage();
+        msg.setPrimitive("/a/b/c");
+        msg.setList(Arrays.asList("/d/e/f","/h/i/j"));
+        ObjectPathMessage received = this.sendAndReceive(new ObjectPathHandler(), msg);
+        assertEquals("/a/b/c",received.getPrimitive());
+        assertArrayEquals(Arrays.asList("/d/e/f","/h/i/j").toArray(),received.getList().toArray());
+    }
 }
