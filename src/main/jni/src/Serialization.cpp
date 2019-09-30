@@ -205,7 +205,7 @@ void serialize_array(context* ctx, int dbus_type, jobjectArray array, DBusMessag
         jobject valueJVM;
         while(i < array_length){
             DBusMessageIter sub_container;
-            dbus_message_iter_open_container(container,DBUS_TYPE_STRUCT,NULL,&sub_container);
+            dbus_message_iter_open_container(container,dbus_type,NULL,&sub_container);
 
             //get object to serialize
             valueJVM = env->GetObjectArrayElement(array,i++);
