@@ -85,4 +85,24 @@ public class PrimitiveTypesSerializationTest extends SerializationTestCase {
         assertEquals(2.2,received.getBoxed(),0);
         assertEquals(3.3,received.getList().get(0),0);
     }
+
+    @Test
+    public void enumTest() throws InterruptedException {
+        EnumMessage msg = new EnumMessage();
+        msg.setByName(EnumMessage.Enum.A);
+        msg.setByOrdinal(EnumMessage.Enum.B);
+        msg.setByNameArray(EnumMessage.Enum.values());
+        msg.setByOrdinalArray(EnumMessage.Enum.values());
+        msg.setByNameList(Arrays.asList(EnumMessage.Enum.values()));
+        msg.setByOrdinalList(Arrays.asList(EnumMessage.Enum.values()));
+
+        EnumMessage received = this.sendAndReceive(new EnumHandler(),msg);
+
+        assertEquals(EnumMessage.Enum.A,received.getByName());
+        assertEquals(EnumMessage.Enum.B,received.getByOrdinal());
+        assertArrayEquals(EnumMessage.Enum.values(),received.getByNameArray());
+        assertArrayEquals(EnumMessage.Enum.values(),received.getByOrdinalArray());
+        assertArrayEquals(EnumMessage.Enum.values(),received.getByNameList().toArray());
+        assertArrayEquals(EnumMessage.Enum.values(),received.getByOrdinalList().toArray());
+    }
 }

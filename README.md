@@ -124,7 +124,8 @@ The DBus arrays of `dict_entries` are mapped to the `Map` class, the key must be
 
 ```java
 @DBusType(
-    /* This signature correspond to an array containing dict_entries of a string and an        * integer. In the java world, it's a Map with a string as key and integers as values
+    /* This signature correspond to an array containing dict_entries of a string and an  
+     * integer. In the java world, it's a Map with a string as key and integers as values
      */
     signature = "a{si}",
     fields = "map"
@@ -137,6 +138,31 @@ public class MapMessage extends Message {
         
 	//for setters too
     public void setMap(Map<String,Integer> map) ...
+}
+```
+
+### Enums
+
+You can use `Enums` in your messages, they will be transferred by name or by ordinal according to the signature you gave to the `DBusType` annotation.
+
+<u>*example of an `Enum` message:*</u>
+
+```java
+@DBusType(
+    //"byName" will be transferred as a string and "byOrdinal" as an integer
+    signature = "si",
+    fields = {"byName","byOrdinal"}
+)
+public class EnumMessage extends Message {
+    private Enum byName;
+    private Enum byOrdinal;
+   
+    public Enum getByName() { ... }
+    public void setByName(Enum byName) { ... }
+    public Enum getByOrdinal() { ... }
+    public void setByOrdinal(Enum byOrdinal) { ... }
+
+    public static enum Enum{ ... }
 }
 ```
 

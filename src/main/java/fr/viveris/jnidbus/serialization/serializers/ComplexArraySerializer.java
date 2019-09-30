@@ -108,7 +108,11 @@ public class ComplexArraySerializer extends Serializer{
             }
         }else{
             //if we have a primitive, it means this array contains arrays of primitive type
-            this.nestedSerializer = new PrimitiveArraySerializer(arrayValueClass,valueSignature,this.managedClass,this.managedFieldName);
+            if(this.isPrimitiveArray){
+                this.nestedSerializer = new PrimitiveArraySerializer(arrayValueClass,valueSignature,this.managedClass,this.managedFieldName);
+            }else{
+                this.nestedSerializer = new PrimitiveArraySerializer(((ParameterizedType)genericType).getActualTypeArguments()[0],valueSignature,this.managedClass,this.managedFieldName);
+            }
         }
     }
 
