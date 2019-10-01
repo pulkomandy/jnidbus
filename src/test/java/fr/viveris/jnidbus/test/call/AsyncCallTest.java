@@ -27,7 +27,7 @@ public class AsyncCallTest extends DBusTestCase {
     @Test
     public void asyncBlockingCall() throws InterruptedException {
         CallHandler handler = new CallHandler();
-        this.receiver.addHandler(handler);
+        this.receiver.addHandlerBlocking(handler);
         AsyncCallTestRemote remoteObj = this.sender.createRemoteObject(this.receiverBusName, "/fr/viveris/jnidbus/test/call/AsyncCallTest",AsyncCallTestRemote.class);
 
         PendingCall<Message.EmptyMessage> pending = remoteObj.blockingCall();
@@ -43,7 +43,7 @@ public class AsyncCallTest extends DBusTestCase {
     @Test
     public void asyncBlockingCallDoNotBlockEventLoop() throws InterruptedException {
         CallHandler handler = new CallHandler();
-        this.receiver.addHandler(handler);
+        this.receiver.addHandlerBlocking(handler);
         AsyncCallTestRemote remoteObj = this.sender.createRemoteObject(this.receiverBusName, "/fr/viveris/jnidbus/test/call/AsyncCallTest",AsyncCallTestRemote.class);
 
         PendingCall<Message.EmptyMessage> pendingEmpty = remoteObj.blockingCall();

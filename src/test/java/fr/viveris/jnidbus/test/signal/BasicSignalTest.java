@@ -25,40 +25,40 @@ public class BasicSignalTest extends DBusTestCase {
     @Test
     public void emptySignal() throws InterruptedException {
         SignalHandler handler = new SignalHandler();
-        this.receiver.addHandler(handler);
-        this.sender.sendSignal("/fr/viveris/jnidbus/signal/BasicSignalTest",new BasicSignalTestRemote.EmptySignal());
+        this.receiver.addHandlerBlocking(handler);
+        this.sender.sendSignalBlocking("/fr/viveris/jnidbus/signal/BasicSignalTest",new BasicSignalTestRemote.EmptySignal());
         assertTrue(handler.barrier.await(2, TimeUnit.SECONDS));
     }
 
     @Test
     public void testHandlerCanBeUnregistered() throws InterruptedException {
         SignalHandler handler = new SignalHandler();
-        this.receiver.addHandler(handler);
-        this.sender.sendSignal("/fr/viveris/jnidbus/signal/BasicSignalTest",new BasicSignalTestRemote.EmptySignal());
+        this.receiver.addHandlerBlocking(handler);
+        this.sender.sendSignalBlocking("/fr/viveris/jnidbus/signal/BasicSignalTest",new BasicSignalTestRemote.EmptySignal());
         assertTrue(handler.barrier.await(500, TimeUnit.MILLISECONDS));
-        this.receiver.removeHandler(handler);
+        this.receiver.removeHandlerBlocking(handler);
         handler.reset();
-        this.sender.sendSignal("/fr/viveris/jnidbus/signal/BasicSignalTest",new BasicSignalTestRemote.EmptySignal());
+        this.sender.sendSignalBlocking("/fr/viveris/jnidbus/signal/BasicSignalTest",new BasicSignalTestRemote.EmptySignal());
         assertFalse(handler.barrier.await(500, TimeUnit.MILLISECONDS));
     }
 
     @Test
     public void signalWithWrongSignatureIsNotDispatched() throws InterruptedException {
         SignalHandler handler = new SignalHandler();
-        this.receiver.addHandler(handler);
+        this.receiver.addHandlerBlocking(handler);
         SingleStringMessage msg = new SingleStringMessage();
         msg.setString(testString);
-        this.sender.sendSignal("/fr/viveris/jnidbus/signal/BasicSignalTest",new BasicSignalTestRemote.StringSignalOnWrongEndpoint(msg));
+        this.sender.sendSignalBlocking("/fr/viveris/jnidbus/signal/BasicSignalTest",new BasicSignalTestRemote.StringSignalOnWrongEndpoint(msg));
         assertFalse(handler.barrier.await(2, TimeUnit.SECONDS));
     }
 
     @Test
     public void signalIsSerializedAnddeserialized() throws InterruptedException {
         SignalHandler handler = new SignalHandler();
-        this.receiver.addHandler(handler);
+        this.receiver.addHandlerBlocking(handler);
         SingleStringMessage msg = new SingleStringMessage();
         msg.setString(testString);
-        this.sender.sendSignal("/fr/viveris/jnidbus/signal/BasicSignalTest",new BasicSignalTestRemote.StringSignal(msg));
+        this.sender.sendSignalBlocking("/fr/viveris/jnidbus/signal/BasicSignalTest",new BasicSignalTestRemote.StringSignal(msg));
         assertTrue(handler.barrier.await(2, TimeUnit.SECONDS));
     }
 

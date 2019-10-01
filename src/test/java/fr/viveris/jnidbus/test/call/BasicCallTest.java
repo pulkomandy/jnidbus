@@ -26,7 +26,7 @@ public class BasicCallTest extends DBusTestCase {
     @Test
     public void emptyCall() throws InterruptedException {
         CallHandler handler = new CallHandler();
-        this.receiver.addHandler(handler);
+        this.receiver.addHandlerBlocking(handler);
         BasicCallTestRemote remoteObj = this.sender.createRemoteObject(this.receiverBusName, "/fr/viveris/jnidbus/test/call/BasicCallTest",BasicCallTestRemote.class);
         PendingCall<Message.EmptyMessage> pending = remoteObj.emptyCall();
         Listener<Message.EmptyMessage> l = new Listener<>();
@@ -40,7 +40,7 @@ public class BasicCallTest extends DBusTestCase {
     @Test
     public void callIsSerializedAnddeserialized() throws InterruptedException {
         CallHandler handler = new CallHandler();
-        this.receiver.addHandler(handler);
+        this.receiver.addHandlerBlocking(handler);
         BasicCallTestRemote remoteObj = this.sender.createRemoteObject(this.receiverBusName, "/fr/viveris/jnidbus/test/call/BasicCallTest",BasicCallTestRemote.class);
 
         SingleStringMessage msg = new SingleStringMessage();

@@ -1,31 +1,28 @@
 /* Copyright 2019, Viveris Technologies <opensource@toulouse.viveris.fr>
  * Distributed under the terms of the Academic Free License.
  */
-package fr.viveris.jnidbus.message.sendingrequest;
+package fr.viveris.jnidbus.message.eventloop.sending;
 
+import fr.viveris.jnidbus.message.eventloop.RequestCallback;
 import fr.viveris.jnidbus.serialization.DBusObject;
 
 /**
- * Represent a reply to be sent
+ * Represent a signal to be sent
  */
-public class ReplySendingRequest extends AbstractSendingRequest {
-    long messagePointer;
-
-    /**
-     * For debug purposes
-     */
+public class SignalSendingRequest extends AbstractSendingRequest{
+    private String path;
     private String interfaceName;
     private String member;
 
-    public ReplySendingRequest(DBusObject message, long messagePointer, String interfaceName, String member) {
-        super(message);
-        this.messagePointer = messagePointer;
+    public SignalSendingRequest(DBusObject message, String path, String interfaceName, String member, RequestCallback callback) {
+        super(message,callback);
+        this.path = path;
         this.interfaceName = interfaceName;
         this.member = member;
     }
 
-    public long getMessagePointer() {
-        return messagePointer;
+    public String getPath() {
+        return path;
     }
 
     public String getInterfaceName() {

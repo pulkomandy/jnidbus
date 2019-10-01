@@ -176,6 +176,9 @@ if your message does not contain any data, the `Message` class contains a static
 
 ## How to use the DBus object
 
+As all the operation regarding DBus are processed by the event loop, most of the JNIDBus primitives are asynchronous and need an additional `RequestCallback` parameter. If you don't need this asynchronicity, the parameter is nullable.
+Most of the asynchronous DBus primitives have a blocking version, that you can use to block your program until the result arrives. Those blocking method will throw an exception if called from the main event loop.
+
 ### Handlers
 
 Handlers are classes that will be able to receive signals and expose method calls to DBus. Those classes must extends the `GenericHandler` class and be annotated with the `Handler` annotation which will give JNIDBus informations about the object path and DBus interface you want to match.
@@ -221,7 +224,7 @@ Dbus receiver = new Dbus(BusType.SESSION,"my.bus.name");
 //instantiate your handler
 SomeHandler handler = new SomeHandler();
 //add it to DBus, JNIDBus will automatically check your bindings and throw if something is wrong.
-this.receiver.addHandler(handler);
+this.receiver.addHandlerBlocking(handler);
 ```
 
 ### Asynchronous handler

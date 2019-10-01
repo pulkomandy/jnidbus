@@ -79,7 +79,7 @@ public class PendingCall<T extends Serializable> {
 
         //if the result is already here, ask for a redispatch
         if(this.isResolved()){
-            this.eventLoop.redispatch(this);
+            this.eventLoop.redispatch(this,null);
         }
     }
 

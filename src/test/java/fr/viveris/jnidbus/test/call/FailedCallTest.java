@@ -28,7 +28,7 @@ public class FailedCallTest extends DBusTestCase {
     @Test
     public void callOnNonExistentMethod() throws InterruptedException {
         CallHandler handler = new CallHandler();
-        this.receiver.addHandler(handler);
+        this.receiver.addHandlerBlocking(handler);
         FailedCallTestRemote remoteObj = this.sender.createRemoteObject(this.receiverBusName, "/fr/viveris/jnidbus/test/call/FailedCallTest",FailedCallTestRemote.class);
 
         PendingCall<Message.EmptyMessage> pending = remoteObj.unknownCall();
@@ -45,7 +45,7 @@ public class FailedCallTest extends DBusTestCase {
     @Test
     public void callReturnsWrongSignature() throws InterruptedException {
         CallHandler handler = new CallHandler();
-        this.receiver.addHandler(handler);
+        this.receiver.addHandlerBlocking(handler);
         FailedCallTestRemote remoteObj = this.sender.createRemoteObject(this.receiverBusName, "/fr/viveris/jnidbus/test/call/FailedCallTest",FailedCallTestRemote.class);
 
         PendingCall<SingleStringMessage> pending = remoteObj.mismatchCall();
@@ -62,7 +62,7 @@ public class FailedCallTest extends DBusTestCase {
     @Test
     public void callReturnsError() throws InterruptedException {
         CallHandler handler = new CallHandler();
-        this.receiver.addHandler(handler);
+        this.receiver.addHandlerBlocking(handler);
         FailedCallTestRemote remoteObj = this.sender.createRemoteObject(this.receiverBusName, "/fr/viveris/jnidbus/test/call/FailedCallTest",FailedCallTestRemote.class);
 
         PendingCall<Message.EmptyMessage> pending = remoteObj.failCall();

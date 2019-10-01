@@ -38,8 +38,8 @@ public class SameThreadSignals {
         try {
             this.sender = new Dbus(BusType.SESSION,this.busName,System.getProperty("dbus.busPath"));
             this.handler = new SignalHandler();
-            sender.addHandler(this.handler);
-        } catch (ConnectionException e) {
+            sender.addHandlerBlocking(this.handler);
+        } catch (ConnectionException | InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -54,7 +54,7 @@ public class SameThreadSignals {
     public void singleThreadSendReceiveEmpty() throws InterruptedException {
         this.handler.latch = new CountDownLatch(EventLoop.MAX_SEND_PER_TICK);
         for(int i = 0; i < EventLoop.MAX_SEND_PER_TICK; i++){
-            this.sender.sendSignal("/Benchmarks/SingleThreadSignals",new SameThreadSignalsRemote.EmptySignal());
+            this.sender.sendSignal("/Benchmarks/SingleThreadSignals",new SameThreadSignalsRemote.EmptySignal(),null);
         }
         this.handler.latch.await();
     }
@@ -78,7 +78,7 @@ public class SameThreadSignals {
         obj.getObjects().add(sub2);
 
         for(int i = 0; i < EventLoop.MAX_SEND_PER_TICK; i++){
-            this.sender.sendSignal("/Benchmarks/SingleThreadSignals",new SameThreadSignalsRemote.ComplexSignal(obj));
+            this.sender.sendSignal("/Benchmarks/SingleThreadSignals",new SameThreadSignalsRemote.ComplexSignal(obj),null);
         }
         this.handler.latch.await();
     }

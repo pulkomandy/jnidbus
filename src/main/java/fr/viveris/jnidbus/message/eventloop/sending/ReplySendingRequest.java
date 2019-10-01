@@ -1,14 +1,16 @@
 /* Copyright 2019, Viveris Technologies <opensource@toulouse.viveris.fr>
  * Distributed under the terms of the Academic Free License.
  */
-package fr.viveris.jnidbus.message.sendingrequest;
+package fr.viveris.jnidbus.message.eventloop.sending;
+
+import fr.viveris.jnidbus.message.eventloop.RequestCallback;
+import fr.viveris.jnidbus.serialization.DBusObject;
 
 /**
- * Represent an error to be sent in reply to a call
+ * Represent a reply to be sent
  */
-public class ErrorReplySendingRequest extends AbstractSendingRequest {
-    private Throwable error;
-    private long messagePointer;
+public class ReplySendingRequest extends AbstractSendingRequest {
+    long messagePointer;
 
     /**
      * For debug purposes
@@ -16,16 +18,11 @@ public class ErrorReplySendingRequest extends AbstractSendingRequest {
     private String interfaceName;
     private String member;
 
-    public ErrorReplySendingRequest(Throwable error, long messagePointer, String interfaceName, String member) {
-        super(null);
-        this.error = error;
+    public ReplySendingRequest(DBusObject message, long messagePointer, String interfaceName, String member, RequestCallback callback) {
+        super(message,callback);
         this.messagePointer = messagePointer;
         this.interfaceName = interfaceName;
         this.member = member;
-    }
-
-    public Throwable getError() {
-        return error;
     }
 
     public long getMessagePointer() {

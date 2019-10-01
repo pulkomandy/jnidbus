@@ -10,7 +10,8 @@ import fr.viveris.jnidbus.cache.SignalMetadata;
 import fr.viveris.jnidbus.exception.RemoteObjectCheckException;
 import fr.viveris.jnidbus.message.Message;
 import fr.viveris.jnidbus.message.PendingCall;
-import fr.viveris.jnidbus.message.sendingrequest.CallSendingRequest;
+import fr.viveris.jnidbus.message.eventloop.RequestCallback;
+import fr.viveris.jnidbus.message.eventloop.sending.CallSendingRequest;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -71,10 +72,22 @@ public class RemoteObjectInterceptor implements InvocationHandler {
         RemoteObjectMetadata meta = RemoteObjectInterceptor.getFromCache(method);
 
         //create a wildcard pendingCall, this wont fail as the method was checked and return the correct type
-        PendingCall pendingCall = new PendingCall(meta.getOutputMetadata().getMessageClass(),this.eventLoop);
+        final PendingCall pendingCall = new PendingCall(meta.getOutputMetadata().getMessageClass(),this.eventLoop);
 
-        //send call and return the PendingCall
-        this.eventLoop.send(new CallSendingRequest(msg.serialize(),this.objectPath,this.interfaceName,meta.getMember(),this.destinationBus,pendingCall));
+        //send call and return the PendingCall, set the request callback to fail the pending call if the sending failed
+        this.eventLoop.send(new CallSendingRequest(msg.serialize(),
+                this.objectPath,
+                this.interfaceName,
+                meta.getMember(),
+                this.destinationBus,
+                pendingCall,
+                new RequestCallback() {
+                    @Override
+                    public void call(Exception e) {
+                        if(e != null) pendingCall.fail(e.getClass().getName(),"The call could not be sent");
+                    }
+                }));
+
         return pendingCall;
     }
 

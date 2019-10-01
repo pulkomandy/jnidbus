@@ -1,5 +1,6 @@
 package fr.viveris.jnidbus.test
 
+import fr.viveris.jnidbus.addHandler
 import fr.viveris.jnidbus.await
 import fr.viveris.jnidbus.dispatching.GenericHandler
 import fr.viveris.jnidbus.dispatching.MemberType
@@ -11,6 +12,7 @@ import fr.viveris.jnidbus.message.PendingCall
 import fr.viveris.jnidbus.message.Promise
 import fr.viveris.jnidbus.remote.RemoteInterface
 import fr.viveris.jnidbus.remote.RemoteMember
+import fr.viveris.jnidbus.removeHandler
 import fr.viveris.jnidbus.test.common.DBusObjects.SingleStringMessage
 import fr.viveris.jnidbus.test.common.DBusTestCase
 import kotlinx.coroutines.*
@@ -32,6 +34,7 @@ class PendingCallExtensionTest : DBusTestCase() {
         val msg = withTimeout(2500){
             pending.await()
         }
+        this@PendingCallExtensionTest.receiver.removeHandler(handler)
 
         assertEquals("test",msg.string)
     }

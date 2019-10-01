@@ -5,8 +5,8 @@ package fr.viveris.jnidbus.message;
 
 import fr.viveris.jnidbus.bindings.bus.EventLoop;
 import fr.viveris.jnidbus.exception.DBusException;
-import fr.viveris.jnidbus.message.sendingrequest.ErrorReplySendingRequest;
-import fr.viveris.jnidbus.message.sendingrequest.ReplySendingRequest;
+import fr.viveris.jnidbus.message.eventloop.sending.ErrorReplySendingRequest;
+import fr.viveris.jnidbus.message.eventloop.sending.ReplySendingRequest;
 import fr.viveris.jnidbus.serialization.Serializable;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -77,9 +77,9 @@ public class Promise<T extends Serializable> {
 
     private void dispatch(boolean error){
         if(error){
-            this.eventLoop.send(new ErrorReplySendingRequest(this.error,this.msgPointer.get(),this.interfaceName,this.member));
+            this.eventLoop.send(new ErrorReplySendingRequest(this.error,this.msgPointer.get(),this.interfaceName,this.member,null));
         }else{
-            this.eventLoop.send(new ReplySendingRequest(this.result.serialize(),this.msgPointer.get(),this.interfaceName,this.member));
+            this.eventLoop.send(new ReplySendingRequest(this.result.serialize(),this.msgPointer.get(),this.interfaceName,this.member,null));
         }
     }
 

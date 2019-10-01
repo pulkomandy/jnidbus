@@ -1,9 +1,10 @@
 /* Copyright 2019, Viveris Technologies <opensource@toulouse.viveris.fr>
  * Distributed under the terms of the Academic Free License.
  */
-package fr.viveris.jnidbus.message.sendingrequest;
+package fr.viveris.jnidbus.message.eventloop.sending;
 
 import fr.viveris.jnidbus.message.PendingCall;
+import fr.viveris.jnidbus.message.eventloop.RequestCallback;
 import fr.viveris.jnidbus.serialization.DBusObject;
 
 /**
@@ -16,8 +17,8 @@ public class CallSendingRequest extends AbstractSendingRequest {
     private String dest;
     private PendingCall pendingCall;
 
-    public CallSendingRequest(DBusObject message, String path, String interfaceName, String member, String dest, PendingCall pendingCall) {
-        super(message);
+    public CallSendingRequest(DBusObject message, String path, String interfaceName, String member, String dest, PendingCall pendingCall, RequestCallback callback) {
+        super(message,callback);
         this.path = path;
         this.interfaceName = interfaceName;
         this.member = member;

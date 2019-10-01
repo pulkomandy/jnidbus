@@ -5,6 +5,7 @@ import fr.viveris.jnidbus.message.PendingCall
 import fr.viveris.jnidbus.serialization.Serializable
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /**
  * suspend the current coroutine until a result or an error is received. If the coroutine is cancelled, the PendingCall
@@ -17,7 +18,7 @@ suspend fun <T : Serializable> PendingCall<T>.await() : T = suspendCancellableCo
         }
 
         override fun error(t: DBusException?) {
-            cont.cancel(t)
+            cont.resumeWithException(t!!)
         }
     })
 

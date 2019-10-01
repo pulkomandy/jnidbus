@@ -1,5 +1,6 @@
 package fr.viveris.jnidbus.test
 
+import fr.viveris.jnidbus.addHandler
 import fr.viveris.jnidbus.await
 import fr.viveris.jnidbus.dispatching.KotlinGenericHandler
 import fr.viveris.jnidbus.dispatching.KotlinMethodInvocator
@@ -10,6 +11,7 @@ import fr.viveris.jnidbus.message.Message
 import fr.viveris.jnidbus.message.PendingCall
 import fr.viveris.jnidbus.remote.RemoteInterface
 import fr.viveris.jnidbus.remote.RemoteMember
+import fr.viveris.jnidbus.removeHandler
 import fr.viveris.jnidbus.test.common.DBusObjects.SingleStringMessage
 import fr.viveris.jnidbus.test.common.DBusTestCase
 import kotlinx.coroutines.delay
@@ -39,6 +41,7 @@ class SuspendingHandlerTest : DBusTestCase(){
         val msg = withTimeout(2500){
             pending.await()
         }
+        this@SuspendingHandlerTest.receiver.removeHandler(handler)
 
         assertEquals("test",msg.string)
     }
@@ -56,6 +59,7 @@ class SuspendingHandlerTest : DBusTestCase(){
         val msg = withTimeout(2500){
             pending.await()
         }
+        this@SuspendingHandlerTest.receiver.removeHandler(handler)
 
         assertEquals("test",msg.string)
     }

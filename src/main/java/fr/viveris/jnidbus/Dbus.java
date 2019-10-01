@@ -10,7 +10,8 @@ import fr.viveris.jnidbus.dispatching.HandlerMethod;
 import fr.viveris.jnidbus.dispatching.annotation.Handler;
 import fr.viveris.jnidbus.exception.ConnectionException;
 import fr.viveris.jnidbus.message.Message;
-import fr.viveris.jnidbus.message.sendingrequest.SignalSendingRequest;
+import fr.viveris.jnidbus.message.eventloop.RequestCallback;
+import fr.viveris.jnidbus.message.eventloop.sending.SignalSendingRequest;
 import fr.viveris.jnidbus.remote.RemoteObjectInterceptor;
 import fr.viveris.jnidbus.remote.Signal;
 import fr.viveris.jnidbus.serialization.signature.Signature;
@@ -19,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Public API of the library. contains all the primitives to interact with Dbus.
@@ -85,7 +87,7 @@ public class Dbus implements AutoCloseable {
      *
      * @param handler handler to register
      */
-    public void addHandler(GenericHandler handler){
+    public void addHandler(GenericHandler handler, RequestCallback callback){
         LOG.info("Adding DBus handler {}",handler.getClass().getName());
         //get annotation
         Handler handlerAnnotation = handler.getHandlerAnnotation();
@@ -112,12 +114,27 @@ public class Dbus implements AutoCloseable {
         //if the dispatcher was created, register it to Dbus a block until it is effectively registered
         if(dispatcherCreated){
             LOG.debug("Adding dispatcher to event loop and register object path {}",handlerAnnotation.path());
-            this.eventLoop.addPathHandler(dispatcher);
+            this.eventLoop.addPathHandler(dispatcher,callback);
             dispatchers.put(handlerAnnotation.path(),dispatcher);
         }
     }
 
-    public void removeHandler(GenericHandler handler){
+    public void addHandlerBlocking(GenericHandler handler) throws InterruptedException {
+        if(this.eventLoop.isCallerOnEventLoop()){
+            throw new IllegalStateException("You can not call a blocking primitive from the event loop");
+        }
+
+        final CountDownLatch barrier = new CountDownLatch(1);
+        this.addHandler(handler, new RequestCallback() {
+            @Override
+            public void call(Exception e) {
+                barrier.countDown();
+            }
+        });
+        barrier.await();
+    }
+
+    public void removeHandler(GenericHandler handler, RequestCallback callback){
         //get annotation
         Handler handlerAnnotation = handler.getHandlerAnnotation();
         if(handlerAnnotation == null) throw new IllegalStateException("The given handler does not have the Handler annotation");
@@ -136,9 +153,23 @@ public class Dbus implements AutoCloseable {
 
         //unregister dispatcher if there is no more handlers
         if(dispatcher.isEmpty()){
-            this.eventLoop.removePathHandler(dispatcher);
+            this.eventLoop.removePathHandler(dispatcher,callback);
+        }
+    }
+
+    public void removeHandlerBlocking(GenericHandler handler) throws InterruptedException {
+        if(this.eventLoop.isCallerOnEventLoop()){
+            throw new IllegalStateException("You can not call a blocking primitive from the event loop");
         }
 
+        final CountDownLatch barrier = new CountDownLatch(1);
+        this.removeHandler(handler, new RequestCallback() {
+            @Override
+            public void call(Exception e) {
+                barrier.countDown();
+            }
+        });
+        barrier.await();
     }
 
     /**
@@ -164,13 +195,28 @@ public class Dbus implements AutoCloseable {
      * @param objectPath
      * @param signal
      */
-    public void sendSignal(String objectPath, Signal signal){
+    public void sendSignal(String objectPath, Signal signal, RequestCallback callback){
         SignalMetadata meta = RemoteObjectInterceptor.getFromCache(signal);
-        this.eventLoop.send(new SignalSendingRequest(signal.getParam().serialize(),objectPath,meta.getInterfaceName(),meta.getMember()));
+        this.eventLoop.send(new SignalSendingRequest(signal.getParam().serialize(),objectPath,meta.getInterfaceName(),meta.getMember(),callback));
+    }
+
+    public void sendSignalBlocking(String objectPath, Signal signal) throws InterruptedException {
+        if(this.eventLoop.isCallerOnEventLoop()){
+            throw new IllegalStateException("You can not call a blocking primitive from the event loop");
+        }
+
+        final CountDownLatch barrier = new CountDownLatch(1);
+        this.sendSignal(objectPath, signal, new RequestCallback() {
+            @Override
+            public void call(Exception e) {
+                barrier.countDown();
+            }
+        });
+        barrier.await();
     }
 
     /**
-     * Empty all the internal JNIDBus cache, usefull when doing hot reload to prevent ClassLoader leaks
+     * Empty all the internal JNIDBus cache
      */
     public static void clearCache(){
         Message.clearCache();

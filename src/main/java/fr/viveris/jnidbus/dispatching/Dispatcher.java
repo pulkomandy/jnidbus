@@ -3,8 +3,8 @@ package fr.viveris.jnidbus.dispatching;
 import fr.viveris.jnidbus.bindings.bus.EventLoop;
 import fr.viveris.jnidbus.message.Message;
 import fr.viveris.jnidbus.message.Promise;
-import fr.viveris.jnidbus.message.sendingrequest.ErrorReplySendingRequest;
-import fr.viveris.jnidbus.message.sendingrequest.ReplySendingRequest;
+import fr.viveris.jnidbus.message.eventloop.sending.ErrorReplySendingRequest;
+import fr.viveris.jnidbus.message.eventloop.sending.ReplySendingRequest;
 import fr.viveris.jnidbus.serialization.DBusObject;
 import fr.viveris.jnidbus.serialization.Serializable;
 import org.slf4j.Logger;
@@ -32,11 +32,6 @@ public class Dispatcher {
      * Is the dispatcher effectively registered to dbus, or is it waiting to be
      */
     private volatile boolean isRegistered = false;
-
-    /**
-     * Barrier to which await if needed
-     */
-    private CountDownLatch barrier = new CountDownLatch(1);
 
     /**
      * Object path of the dispatcher
@@ -160,7 +155,7 @@ public class Dispatcher {
                     if(returnObject != null && msgPointer != 0){
                         if(returnObject instanceof Message){
                             LOG.debug("Handler returned a result, dispatch the reply: {}",returnObject.toString());
-                            this.eventLoop.send(new ReplySendingRequest(((Message)returnObject).serialize(),msgPointer,interfaceName,member));
+                            this.eventLoop.send(new ReplySendingRequest(((Message)returnObject).serialize(),msgPointer,interfaceName,member,null));
                         }else if(returnObject instanceof Promise){
                             LOG.debug("Handler returned a promise, set the message pointer and proceed");
                             ((Promise) returnObject).setMessagePointer(msgPointer,interfaceName,member,this.eventLoop);
@@ -173,7 +168,7 @@ public class Dispatcher {
                 }catch (Exception e){
                     //if the message is a call, reply an error
                     if(msgPointer != 0){
-                        this.eventLoop.send(new ErrorReplySendingRequest(e.getCause(),msgPointer, interfaceName, member));
+                        this.eventLoop.send(new ErrorReplySendingRequest(e.getCause(),msgPointer, interfaceName, member,null));
                     }else{
                         LOG.error("An exception was raised during signal handling",e);
                     }
@@ -183,22 +178,6 @@ public class Dispatcher {
         }
         //no handler was found
         return false;
-    }
-
-    /**
-     * Called by the event loop when the dispatcher is effectively registered. It will update its state and unlock the barrier
-     */
-    public void setAsRegistered(){
-        this.isRegistered = true;
-        this.barrier.countDown();
-    }
-
-    /**
-     * await on the synchronization barrier
-     * @throws InterruptedException thrown when the registration is interrupted
-     */
-    public void awaitRegistration() throws InterruptedException {
-        this.barrier.await();
     }
 
     public boolean isRegistered() {

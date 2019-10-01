@@ -5,7 +5,13 @@ import fr.viveris.jnidbus.exception.ClosedEventLoopException;
 import fr.viveris.jnidbus.exception.DBusException;
 import fr.viveris.jnidbus.exception.EventLoopSetupException;
 import fr.viveris.jnidbus.message.PendingCall;
-import fr.viveris.jnidbus.message.sendingrequest.*;
+import fr.viveris.jnidbus.message.eventloop.PendingCallRedispatchRequest;
+import fr.viveris.jnidbus.message.eventloop.RequestCallback;
+import fr.viveris.jnidbus.message.eventloop.dispatcher.DispatcherRegistrationRequest;
+import fr.viveris.jnidbus.message.eventloop.dispatcher.AbstractDispatcherRequest;
+import fr.viveris.jnidbus.message.eventloop.EventLoopRequest;
+import fr.viveris.jnidbus.message.eventloop.dispatcher.DispatcherUnregistrationRequest;
+import fr.viveris.jnidbus.message.eventloop.sending.*;
 import fr.viveris.jnidbus.serialization.DBusObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,26 +66,9 @@ public class EventLoop implements Closeable {
      */
     private Thread thread;
 
-    /**
-     * Queue of dispatchers to register to Dbus
-     */
-    private ConcurrentLinkedDeque<Dispatcher> handlerAddingQueue = new ConcurrentLinkedDeque<>();
 
-    /**
-     * Queue of dispatchers to register to Dbus
-     */
-    private ConcurrentLinkedDeque<Dispatcher> handlerRemovingQueue = new ConcurrentLinkedDeque<>();
+    private ConcurrentLinkedDeque<EventLoopRequest> eventQueue = new ConcurrentLinkedDeque<>();
 
-    /**
-     * Queue of sending request. A sending request represent any type of message we want to send through DBus (signal, calls, method return, errors)
-     */
-    private ConcurrentLinkedDeque<AbstractSendingRequest> signalSendingQueue = new ConcurrentLinkedDeque<>();
-
-    /**
-     * Queue containing the PendingCall that received the result before the listener was set and that need to dispatch the
-     * listener notification on the event loop
-     */
-    private ConcurrentLinkedDeque<PendingCall> redispatchRequestQueue = new ConcurrentLinkedDeque<>();
 
     /**
      * Java class representing the Dbus connection
@@ -231,68 +220,93 @@ public class EventLoop implements Closeable {
         LOG.debug("Event loop {} successfully started",this.connection.getBusName());
 
         //tick while the event loop is valid
+        int timeout = -1;
         while(!this.isClosed.get()){
             //from now messages added to the queue by other threads may or may not be added before the tick() call, so we
             //update the flag to make the caller call wakeup
             this.shouldWakeup = true;
 
-            //add dispatchers
-            Dispatcher d;
-            while((d = this.handlerAddingQueue.poll()) != null){
-                this.addPathHandler(this.dBusContextPointer,d.getPath(),d);
-                //notify the dispatcher it has been registered
-                d.setAsRegistered();
-                LOG.debug("Event loop {} successfully registered the dispatcher for the path {}",this.connection.getBusName(),d.getPath());
-            }
-
-            //remove dispatchers
-            while((d = this.handlerRemovingQueue.poll()) != null){
-                this.removePathHandler(this.dBusContextPointer,d.getPath());
-                LOG.debug("Event loop {} successfully unregistered the dispatcher for the path {}",this.connection.getBusName(),d.getPath());
-            }
-
-            //execute redispatch requests
-            PendingCall p;
-            while ((p = this.redispatchRequestQueue.poll()) != null){
-                p.forceNotification();
-            }
-
             int i = 0;
-            AbstractSendingRequest abstractRequest;
-            while((abstractRequest = this.signalSendingQueue.poll()) != null){
-                if(abstractRequest instanceof CallSendingRequest){
-                    CallSendingRequest req = (CallSendingRequest)abstractRequest;
-                    LOG.debug("Sending DBus call {}.{}({}) on path {} for the bus {}",req.getInterfaceName(),req.getMember(),req.getMessage().getSignature(),req.getPath(),req.getDest());
-                    this.sendCall(this.dBusContextPointer,req.getPath(),req.getInterfaceName(),req.getMember(),req.getMessage(),req.getDest(),req.getPendingCall());
-
-                }else if(abstractRequest instanceof ErrorReplySendingRequest){
-                    ErrorReplySendingRequest req = (ErrorReplySendingRequest)abstractRequest;
-                    LOG.debug("Sending DBus error {} thrown form {}.{}",req.getError().toString(),req.getInterfaceName(),req.getMember());
-                    if(req.getError() instanceof DBusException){
-                        DBusException cast = (DBusException)req.getError();
-                        this.sendReplyError(this.dBusContextPointer,req.getMessagePointer(),cast.getCode(),cast.getMessage());
-                    }else{
-                        this.sendReplyError(this.dBusContextPointer,req.getMessagePointer(),req.getError().getClass().getName(),req.getError().getMessage());
-                    }
-
-                }else if(abstractRequest instanceof ReplySendingRequest){
-                    ReplySendingRequest req = (ReplySendingRequest)abstractRequest;
-                    LOG.debug("Sending DBus reply form {}.{}({})",req.getInterfaceName(),req.getMember(),req.getMessage().getSignature());
-                    this.sendReply(this.dBusContextPointer,req.getMessage(),req.getMessagePointer());
-
-                }else if(abstractRequest instanceof SignalSendingRequest){
-                    SignalSendingRequest req = (SignalSendingRequest)abstractRequest;
-                    LOG.debug("Sending DBus signal {}.{}({}) on path {}",req.getInterfaceName(),req.getMember(),req.getMessage().getSignature(),req.getPath());
-                    this.sendSignal(this.dBusContextPointer,req.getPath(),req.getInterfaceName(),req.getMember(),req.getMessage());
-                }
-                if(++i >= MAX_SEND_PER_TICK){ break; }
+            EventLoopRequest request;
+            while((request = this.eventQueue.poll()) != null){
+                this.processRequest(request);
+                /**
+                 * If we processed too much event, DBus may be waiting to dispatch events, so we abort request processing
+                 * and make a call to tick() with a timeout to 0 so epoll_wait return immediately so we can resume request
+                 * processing if there is no event
+                 */
+                if(++i >= MAX_SEND_PER_TICK){
+                    timeout = 0;
+                    break;
+                }else timeout = -1;
             }
 
             //launch tick
-            this.tick(this.dBusContextPointer,-1);
+            this.tick(this.dBusContextPointer,timeout);
         }
 
         this.connection.close();
+    }
+
+    private void processRequest(EventLoopRequest request){
+        try{
+            if(request instanceof AbstractDispatcherRequest){
+                Dispatcher d = ((AbstractDispatcherRequest) request).getDispatcher();
+                if(request instanceof DispatcherRegistrationRequest){
+                    this.addPathHandler(this.dBusContextPointer,d.getPath(),d);
+                    LOG.debug("Event loop {} successfully registered the dispatcher for the path {}",this.connection.getBusName(),d.getPath());
+
+                }else if(request instanceof DispatcherUnregistrationRequest){
+                    this.removePathHandler(this.dBusContextPointer,d.getPath());
+                    LOG.debug("Event loop {} successfully unregistered the dispatcher for the path {}",this.connection.getBusName(),d.getPath());
+
+                }
+
+            } else if(request instanceof PendingCallRedispatchRequest){
+                ((PendingCallRedispatchRequest) request).getPendingCall().forceNotification();
+
+            }else if(request instanceof AbstractSendingRequest){
+                this.processSendingRequest((AbstractSendingRequest) request);
+            }
+
+            if(request.getCallback() != null){
+                request.getCallback().call(null);
+            }
+        }catch (Exception e){
+            if(request.getCallback() != null){
+                request.getCallback().call(e);
+            }else{
+                LOG.error("An exception was raised during event loop request processing but the request do not have any callback",e);
+            }
+        }
+    }
+
+    private void processSendingRequest(AbstractSendingRequest sendingRequest){
+        if(sendingRequest instanceof CallSendingRequest){
+            CallSendingRequest req = (CallSendingRequest) sendingRequest;
+            LOG.debug("Sending DBus call {}.{}({}) on path {} for the bus {}",req.getInterfaceName(),req.getMember(),req.getMessage().getSignature(),req.getPath(),req.getDest());
+            this.sendCall(this.dBusContextPointer,req.getPath(),req.getInterfaceName(),req.getMember(),req.getMessage(),req.getDest(),req.getPendingCall());
+
+        }else if(sendingRequest instanceof ErrorReplySendingRequest){
+            ErrorReplySendingRequest req = (ErrorReplySendingRequest) sendingRequest;
+            LOG.debug("Sending DBus error {} thrown form {}.{}",req.getError().toString(),req.getInterfaceName(),req.getMember());
+            if(req.getError() instanceof DBusException){
+                DBusException cast = (DBusException)req.getError();
+                this.sendReplyError(this.dBusContextPointer,req.getMessagePointer(),cast.getCode(),cast.getMessage());
+            }else{
+                this.sendReplyError(this.dBusContextPointer,req.getMessagePointer(),req.getError().getClass().getName(),req.getError().getMessage());
+            }
+
+        }else if(sendingRequest instanceof ReplySendingRequest){
+            ReplySendingRequest req = (ReplySendingRequest) sendingRequest;
+            LOG.debug("Sending DBus reply form {}.{}({})",req.getInterfaceName(),req.getMember(),req.getMessage().getSignature());
+            this.sendReply(this.dBusContextPointer,req.getMessage(),req.getMessagePointer());
+
+        }else if(sendingRequest instanceof SignalSendingRequest){
+            SignalSendingRequest req = (SignalSendingRequest) sendingRequest;
+            LOG.debug("Sending DBus signal {}.{}({}) on path {}",req.getInterfaceName(),req.getMember(),req.getMessage().getSignature(),req.getPath());
+            this.sendSignal(this.dBusContextPointer,req.getPath(),req.getInterfaceName(),req.getMember(),req.getMessage());
+        }
     }
 
     /**
@@ -300,9 +314,9 @@ public class EventLoop implements Closeable {
      * is successfully registered, its setAsRegistered method will be called
      * @param dispatcher dispatcher to register to dbus
      */
-    public void addPathHandler(Dispatcher dispatcher){
+    public void addPathHandler(Dispatcher dispatcher, RequestCallback callback){
         this.checkEventLoop();
-        this.handlerAddingQueue.add(dispatcher);
+        this.eventQueue.add(new DispatcherRegistrationRequest(dispatcher,callback));
         this.wakeupIfNeeded();
     }
 
@@ -310,9 +324,9 @@ public class EventLoop implements Closeable {
      *
      * @param dispatcher dispatcher to unregister
      */
-    public void removePathHandler(Dispatcher dispatcher){
+    public void removePathHandler(Dispatcher dispatcher, RequestCallback callback){
         this.checkEventLoop();
-        this.handlerRemovingQueue.add(dispatcher);
+        this.eventQueue.add(new DispatcherUnregistrationRequest(dispatcher,callback));
         this.wakeupIfNeeded();
     }
 
@@ -322,13 +336,13 @@ public class EventLoop implements Closeable {
      */
     public void send(AbstractSendingRequest request){
         this.checkEventLoop();
-        this.signalSendingQueue.add(request);
+        this.eventQueue.add(request);
         this.wakeupIfNeeded();
     }
 
-    public void redispatch(PendingCall call){
+    public void redispatch(PendingCall call, RequestCallback callback){
         this.checkEventLoop();
-        this.redispatchRequestQueue.add(call);
+        this.eventQueue.add(new PendingCallRedispatchRequest(call,callback));
         this.wakeupIfNeeded();
     }
 
@@ -366,6 +380,10 @@ public class EventLoop implements Closeable {
         this.checkEventLoop();
         this.isClosed.set(true);
         this.wakeup(this.dBusContextPointer);
+    }
+
+    public boolean isCallerOnEventLoop(){
+        return Thread.currentThread() == this.thread;
     }
 
 }
