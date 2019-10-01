@@ -97,6 +97,11 @@ public class PrimitiveTypesSerializationTest extends SerializationTestCase {
         assertArrayEquals(Arrays.asList(new ObjectPath("/d/e/f"),new ObjectPath("/h/i/j")).toArray(),received.getList().toArray());
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testWrongObjectPathFormat(){
+        ObjectPath path = new ObjectPath("a//b/c/");
+    }
+
     @Test
     public void enumTest() throws InterruptedException {
         EnumMessage msg = new EnumMessage();
