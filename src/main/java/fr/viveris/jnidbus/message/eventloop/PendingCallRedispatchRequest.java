@@ -2,6 +2,9 @@ package fr.viveris.jnidbus.message.eventloop;
 
 import fr.viveris.jnidbus.message.PendingCall;
 
+/**
+ * Request made when a PendingCall listener needs to be executed on the event loop
+ */
 public class PendingCallRedispatchRequest extends EventLoopRequest {
     PendingCall pendingCall;
 

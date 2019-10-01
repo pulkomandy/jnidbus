@@ -66,9 +66,10 @@ public class EventLoop implements Closeable {
      */
     private Thread thread;
 
-
+    /**
+     * Main event queue
+     */
     private ConcurrentLinkedDeque<EventLoopRequest> eventQueue = new ConcurrentLinkedDeque<>();
-
 
     /**
      * Java class representing the Dbus connection
@@ -226,14 +227,16 @@ public class EventLoop implements Closeable {
             //update the flag to make the caller call wakeup
             this.shouldWakeup = true;
 
+            //process all the event in queue if possible
             int i = 0;
             EventLoopRequest request;
             while((request = this.eventQueue.poll()) != null){
                 this.processRequest(request);
+
                 /**
                  * If we processed too much event, DBus may be waiting to dispatch events, so we abort request processing
                  * and make a call to tick() with a timeout to 0 so epoll_wait return immediately so we can resume request
-                 * processing if there is no event
+                 * processing if there is no event for Dbus to dispatch
                  */
                 if(++i >= MAX_SEND_PER_TICK){
                     timeout = 0;
@@ -248,6 +251,11 @@ public class EventLoop implements Closeable {
         this.connection.close();
     }
 
+    /**
+     * Process a request made to the event loop
+     *
+     * @param request the request to process
+     */
     private void processRequest(EventLoopRequest request){
         try{
             if(request instanceof AbstractDispatcherRequest){
@@ -281,6 +289,11 @@ public class EventLoop implements Closeable {
         }
     }
 
+    /**
+     * Process a message send request made to the event loop
+     *
+     * @param sendingRequest request to process
+     */
     private void processSendingRequest(AbstractSendingRequest sendingRequest){
         if(sendingRequest instanceof CallSendingRequest){
             CallSendingRequest req = (CallSendingRequest) sendingRequest;
@@ -382,6 +395,10 @@ public class EventLoop implements Closeable {
         this.wakeup(this.dBusContextPointer);
     }
 
+    /**
+     * Returns true if the thread calling this method is the event loop
+     * @return
+     */
     public boolean isCallerOnEventLoop(){
         return Thread.currentThread() == this.thread;
     }

@@ -119,6 +119,11 @@ public class Dbus implements AutoCloseable {
         }
     }
 
+    /**
+     * @see Dbus#addHandler(GenericHandler, RequestCallback) 
+     * @param handler
+     * @throws InterruptedException
+     */
     public void addHandlerBlocking(GenericHandler handler) throws InterruptedException {
         if(this.eventLoop.isCallerOnEventLoop()){
             throw new IllegalStateException("You can not call a blocking primitive from the event loop");
@@ -157,6 +162,11 @@ public class Dbus implements AutoCloseable {
         }
     }
 
+    /**
+     * @see Dbus#removeHandler(GenericHandler, RequestCallback) 
+     * @param handler
+     * @throws InterruptedException
+     */
     public void removeHandlerBlocking(GenericHandler handler) throws InterruptedException {
         if(this.eventLoop.isCallerOnEventLoop()){
             throw new IllegalStateException("You can not call a blocking primitive from the event loop");
@@ -200,6 +210,12 @@ public class Dbus implements AutoCloseable {
         this.eventLoop.send(new SignalSendingRequest(signal.getParam().serialize(),objectPath,meta.getInterfaceName(),meta.getMember(),callback));
     }
 
+    /**
+     * @see Dbus#sendSignal(String, Signal, RequestCallback)
+     * @param objectPath
+     * @param signal
+     * @throws InterruptedException
+     */
     public void sendSignalBlocking(String objectPath, Signal signal) throws InterruptedException {
         if(this.eventLoop.isCallerOnEventLoop()){
             throw new IllegalStateException("You can not call a blocking primitive from the event loop");
