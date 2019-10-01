@@ -175,7 +175,7 @@ public class Dispatcher {
                     if(msgPointer != 0){
                         this.eventLoop.send(new ErrorReplySendingRequest(e.getCause(),msgPointer, interfaceName, member));
                     }else{
-                        LOG.warn("An exception was raised during signal handling",e);
+                        LOG.error("An exception was raised during signal handling",e);
                     }
                 }
                 return true;

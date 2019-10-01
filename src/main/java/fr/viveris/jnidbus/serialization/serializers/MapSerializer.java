@@ -67,7 +67,7 @@ public class MapSerializer extends Serializer {
             this.valueSerializer = new PrimitiveSerializer((Class) valueType,valueSignature,managedClass,managedFieldName);
         }else if(valueSignature.getContainerType() == SupportedTypes.ARRAY){
             if(valueSignature.getPrimitive() != null){
-                this.valueSerializer = new PrimitiveArraySerializer(valueClass,valueSignature,managedClass,managedFieldName);
+                this.valueSerializer = new PrimitiveArraySerializer(valueType,valueSignature,managedClass,managedFieldName);
             }else{
                 this.valueSerializer = new ComplexArraySerializer(valueType,valueSignature,managedClass,managedFieldName);
             }

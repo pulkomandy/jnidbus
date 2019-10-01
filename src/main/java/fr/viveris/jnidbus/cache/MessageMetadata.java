@@ -187,7 +187,7 @@ public class MessageMetadata {
 
         //if we have an array container type and a primitive type, it means we have a primitive array
         if(element.getContainerType() == SupportedTypes.ARRAY && element.getPrimitive() != null){
-            return new PrimitiveArraySerializer(clazz,element,this.clazz,fieldName);
+            return new PrimitiveArraySerializer(genericType,element,this.clazz,fieldName);
 
         // if there is a primitive type but no container, we have a primitive type
         }else if(element.getContainerType() == null && element.getPrimitive() != null){

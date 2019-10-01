@@ -95,4 +95,24 @@ public class PrimitiveTypesSerializationTest extends SerializationTestCase {
         assertEquals("/a/b/c",received.getPrimitive());
         assertArrayEquals(Arrays.asList("/d/e/f","/h/i/j").toArray(),received.getList().toArray());
     }
+
+    @Test
+    public void enumTest() throws InterruptedException {
+        EnumMessage msg = new EnumMessage();
+        msg.setByName(EnumMessage.Enum.A);
+        msg.setByOrdinal(EnumMessage.Enum.B);
+        msg.setByNameArray(EnumMessage.Enum.values());
+        msg.setByOrdinalArray(EnumMessage.Enum.values());
+        msg.setByNameList(Arrays.asList(EnumMessage.Enum.values()));
+        msg.setByOrdinalList(Arrays.asList(EnumMessage.Enum.values()));
+
+        EnumMessage received = this.sendAndReceive(new EnumHandler(),msg);
+
+        assertEquals(EnumMessage.Enum.A,received.getByName());
+        assertEquals(EnumMessage.Enum.B,received.getByOrdinal());
+        assertArrayEquals(EnumMessage.Enum.values(),received.getByNameArray());
+        assertArrayEquals(EnumMessage.Enum.values(),received.getByOrdinalArray());
+        assertArrayEquals(EnumMessage.Enum.values(),received.getByNameList().toArray());
+        assertArrayEquals(EnumMessage.Enum.values(),received.getByOrdinalList().toArray());
+    }
 }
