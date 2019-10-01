@@ -4,6 +4,7 @@ import fr.viveris.jnidbus.exception.MessageCheckException;
 import fr.viveris.jnidbus.exception.MessageSignatureMismatchException;
 import fr.viveris.jnidbus.serialization.signature.SignatureElement;
 import fr.viveris.jnidbus.serialization.signature.SupportedTypes;
+import fr.viveris.jnidbus.types.ObjectPath;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
@@ -16,8 +17,7 @@ import java.util.List;
 public class PrimitiveArraySerializer extends Serializer {
     private boolean isPrimitiveArray;
     private boolean isBoxedArray;
-    private boolean isEnumArray;
-    private SupportedTypes expectedValueSignature;
+    private boolean useSerializer;
     private Class expectedArrayType;
     private Class expectedValueType;
 
@@ -55,16 +55,16 @@ public class PrimitiveArraySerializer extends Serializer {
             }
         }
 
-        this.isEnumArray = this.expectedValueType.isEnum();
-        this.expectedValueSignature = signature.getPrimitive();
-        this.isBoxedArray = this.expectedValueType != null && Object.class.isAssignableFrom(this.expectedValueType);
+        this.useSerializer = PrimitiveSerializer.isNonBasicType(this.expectedValueType);
+
         this.primitiveSerializer = new PrimitiveSerializer(this.expectedValueType,signature.getSignature().getFirst(),managedClass,managedFieldName);
+        this.isBoxedArray = this.expectedValueType != null && Object.class.isAssignableFrom(this.expectedValueType);
     }
 
     @Override
     public Object serialize(Object value){
         //primitive arrays do not need any processing as they contain only primitive DBus values
-        if(this.isEnumArray){
+        if(this.useSerializer){
             Object[] returned;
             if(this.isPrimitiveArray){
                 Object[] values = (Object[])value;
@@ -94,7 +94,7 @@ public class PrimitiveArraySerializer extends Serializer {
 
         if(this.isPrimitiveArray) {
             if(values.length == 0) return Array.newInstance(this.expectedValueType,0);
-            else if(this.isBoxedArray && !this.isEnumArray){
+            else if(this.isBoxedArray && !this.useSerializer){
                 return Arrays.copyOf(values,values.length,this.expectedArrayType);
             }else{
                 Object array = Array.newInstance(this.expectedValueType,values.length);
@@ -108,7 +108,7 @@ public class PrimitiveArraySerializer extends Serializer {
         else{
             //workaround of Array.toList() which returns a list with an empty array inside of the array is empty or null
             if(values == null || values.length == 0) return Collections.emptyList();
-            else if(this.isEnumArray){
+            else if(this.useSerializer){
                 List returned = new ArrayList();
                 for(Object v : values){
                     returned.add(this.primitiveSerializer.deserialize(v));

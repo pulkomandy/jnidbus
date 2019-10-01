@@ -16,7 +16,8 @@ JNIdbus uses annotations and reflection to serialize POJO into DBus messages. Th
 
 - Boolean, Byte, Short, Integer, Long, Double and their primitive equivalent
 - String
-- Object path (mapped on the `String` class)
+- Object path (mapped on the `ObjectPath` class)
+- Enum (transferred either as String or Integer according to the signature of the message)
 - Nested serializable objects
 - Lists
 

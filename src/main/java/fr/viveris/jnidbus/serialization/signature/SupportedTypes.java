@@ -3,6 +3,8 @@
  */
 package fr.viveris.jnidbus.serialization.signature;
 
+import fr.viveris.jnidbus.types.ObjectPath;
+
 import java.lang.reflect.Array;
 
 /**
@@ -10,7 +12,7 @@ import java.lang.reflect.Array;
  */
 public enum SupportedTypes {
     STRING('s',String.class,String.class),
-    OBJ_PATH('o',String.class,String.class),
+    OBJ_PATH('o', ObjectPath.class,ObjectPath.class),
     INTEGER('i',Integer.TYPE,Integer.class),
     BOOLEAN('b',Boolean.TYPE,Boolean.class),
     BYTE('y',Byte.TYPE,Byte.class),

@@ -5,6 +5,7 @@ package fr.viveris.jnidbus.test.serialization;
 
 import fr.viveris.jnidbus.test.common.DBusObjects.primitives.*;
 import fr.viveris.jnidbus.test.common.handlers.primitives.*;
+import fr.viveris.jnidbus.types.ObjectPath;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -89,11 +90,11 @@ public class PrimitiveTypesSerializationTest extends SerializationTestCase {
     @Test
     public void objectPathTest() throws InterruptedException {
         ObjectPathMessage msg = new ObjectPathMessage();
-        msg.setPrimitive("/a/b/c");
-        msg.setList(Arrays.asList("/d/e/f","/h/i/j"));
+        msg.setPrimitive(new ObjectPath("/a/b/c"));
+        msg.setList(Arrays.asList(new ObjectPath("/d/e/f"),new ObjectPath("/h/i/j")));
         ObjectPathMessage received = this.sendAndReceive(new ObjectPathHandler(), msg);
-        assertEquals("/a/b/c",received.getPrimitive());
-        assertArrayEquals(Arrays.asList("/d/e/f","/h/i/j").toArray(),received.getList().toArray());
+        assertEquals(new ObjectPath("/a/b/c"),received.getPrimitive());
+        assertArrayEquals(Arrays.asList(new ObjectPath("/d/e/f"),new ObjectPath("/h/i/j")).toArray(),received.getList().toArray());
     }
 
     @Test

@@ -5,6 +5,7 @@ package fr.viveris.jnidbus.test.common.DBusObjects.primitives;
 
 import fr.viveris.jnidbus.message.Message;
 import fr.viveris.jnidbus.serialization.DBusType;
+import fr.viveris.jnidbus.types.ObjectPath;
 
 import java.util.List;
 
@@ -13,22 +14,22 @@ import java.util.List;
         fields = {"primitive","list"}
 )
 public class ObjectPathMessage extends Message {
-    private String primitive;
-    private List<String> list;
+    private ObjectPath primitive;
+    private List<ObjectPath> list;
 
-    public String getPrimitive() {
+    public ObjectPath getPrimitive() {
         return primitive;
     }
 
-    public void setPrimitive(String primitive) {
+    public void setPrimitive(ObjectPath primitive) {
         this.primitive = primitive;
     }
 
-    public List<String> getList() {
+    public List<ObjectPath> getList() {
         return list;
     }
 
-    public void setList(List<String> list) {
+    public void setList(List<ObjectPath> list) {
         this.list = list;
     }
 }
