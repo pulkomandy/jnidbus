@@ -4,24 +4,20 @@
 package fr.viveris.jnidbus.test.common;
 
 import fr.viveris.jnidbus.exception.DBusException;
-import fr.viveris.jnidbus.message.PendingCall;
+import fr.viveris.jnidbus.message.Promise;
 import fr.viveris.jnidbus.serialization.Serializable;
 
 import java.util.concurrent.CountDownLatch;
 
-public class Listener<T extends Serializable> implements PendingCall.Listener<T>{
+public class Listener<T extends Serializable> implements Promise.Callback<T> {
     private CountDownLatch barrier = new CountDownLatch(1);
     private DBusException t = null;
     private T value = null;
-    @Override
-    public void notify(T value) {
-        this.value = value;
-        barrier.countDown();
-    }
 
     @Override
-    public void error(DBusException t) {
-        this.t = t;
+    public void value(T value,Exception e) {
+        this.value = value;
+        this.t = (DBusException) e;
         barrier.countDown();
     }
 

@@ -269,11 +269,9 @@ If an unexpected exception happens in a handler, a `DBusException` will be autom
 
 JNIDBus provide a way to represent your DBus distant objects through `Java proxies`. You describe your DBus object as an interface with a `@RemoteInterface` annotation and annotate the methods with `@RemoteMember`. All of the interface methods must be annotated.
 
-There must be only one parameter on each method which must be serializable. If your call do not have any parameter you can omit it instead of using the `EMptyMessage` class. Each method must return a `PendingCall` with its generic type being the expected return type.
+There must be only one parameter on each method which must be serializable. If your call do not have any parameter you can omit it instead of using the `EmptyMessage` class. Each method must return a `Promise` with its generic type being the expected return type.
 
-The`PendingCall` class allows you to bind a listener that will be notified when a result or an error is received. A listener will be notified once and further results/errors will be ignored. you can cancel a call by manually calling the `fail()` method on the `PendingCall` which will notify the listener and block any incoming result. The Listener will be executed on same thread as the event loop so you must avoid blocking code at all cost.
-
-Result or errors ignored will be stored in the `PendingCall` object for debug purposes.
+The`Promise` class allows you to bind a callback that will be notified when a result or an error is received. A callback will be notified once and further results/errors will be ignored. you can cancel a call by manually calling the `fail()` method on the Promise which will notify the callback and block any incoming result. The Listener will be executed on same thread as the event loop so you must avoid blocking code at all cost.
 
 *<u>example of a call without input that returns a string:</u>*
 
@@ -282,23 +280,18 @@ Result or errors ignored will be stored in the `PendingCall` object for debug pu
 public interface MyRemoteObject{
     
     @RemoteMember("someCall")
-    PendingCall<StringMessage> call();
+    Promise<StringMessage> call();
     //equivalent to: 
-    //PendingCall<StringMessage> call(Message.EmptyMessage msg)
+    //Promise<StringMessage> call(Message.EmptyMessage msg)
 }
 ```
 
 *<u>example of a listener for the above call:</u>*
 
 ```java
-public class StringListener implements PendingCall.Listener<StringMessage>{
+public class StringListener implements Promise.Callback<StringMessage>{
     @Override
-    public void notify(StringMessage value) {
-        //do something
-    }
-
-    @Override
-    public void error(DBusException t) {
+    public void value(StringMessage value, Exception e) {
         //do something
     }
 }
@@ -316,7 +309,7 @@ MyRemoteObject remote = sender.createRemoteObject("receiver.bus.name",
                                                   "/remote/object/path",
                                                   MyRemoteObject.class);
 //call the method on your remote object
-PendingCall<StringMessage> pending = remote.call();
+Promise<StringMessage> pending = remote.call();
 
 //create the listener
 StringListener l = new StringListener();
@@ -369,7 +362,7 @@ sender.sendSignal("/remote/object/path",new MyRemoteObject.StringSignal(msg));
 
 ## Kotlin
 
-A support library for Kotlin is available under the artifact `jnidbus-kotlin`, it provides basic support for coroutines through the `await()` extension on the `PendingCall` class and it also allows for DBus handlers to declare suspending methods. In order to do so, your handler class must extends the `KotlinGenericHandler` class instead of the `GenericHandler` one.
+A support library for Kotlin is available under the artifact `jnidbus-kotlin`, it provides basic support for coroutines through the `await()` extension on the `Promsie` class and it also allows for DBus handlers to declare suspending methods. In order to do so, your handler class must extends the `KotlinGenericHandler` class instead of the `GenericHandler` one.
 
 Please note that you must explicitly register the kotlin extension to jnidbus by using the `KotlinMethodInvocator.registerKotlinInvocator()` before registering any kotlin handler
 

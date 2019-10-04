@@ -90,10 +90,10 @@ void handle_call_response(DBusPendingCall* pending, void* ctxPtr){
     dbus_error_init(&err);
     dbus_set_error_from_message(&err,msg);
     env->CallVoidMethod(
-      pCtx->pending_call,
+      pCtx->promise,
       find_method(
         ctx,
-        "fr/viveris/jnidbus/message/PendingCall", 
+        "fr/viveris/jnidbus/message/DBusPromise", 
         "fail", 
         "(Ljava/lang/String;Ljava/lang/String;)V"
       ),
@@ -112,11 +112,11 @@ void handle_call_response(DBusPendingCall* pending, void* ctxPtr){
       env->NewStringUTF(dbus_message_get_signature(msg)));
 
     env->CallVoidMethod(
-      pCtx->pending_call,
+      pCtx->promise,
       find_method(
         ctx,
-        "fr/viveris/jnidbus/message/PendingCall", 
-        "notify", 
+        "fr/viveris/jnidbus/message/DBusPromise", 
+        "resolve", 
         "(Lfr/viveris/jnidbus/serialization/DBusObject;)V"
       ),
       jvmObject
@@ -126,7 +126,7 @@ void handle_call_response(DBusPendingCall* pending, void* ctxPtr){
   //free resources
   dbus_message_unref(msg);
   dbus_pending_call_unref(pending);
-  env->DeleteGlobalRef(pCtx->pending_call);
+  env->DeleteGlobalRef(pCtx->promise);
   free(pCtx);
 }
 

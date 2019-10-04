@@ -8,7 +8,7 @@ import fr.viveris.jnidbus.dispatching.MemberType
 import fr.viveris.jnidbus.dispatching.annotation.Handler
 import fr.viveris.jnidbus.dispatching.annotation.HandlerMethod
 import fr.viveris.jnidbus.message.Message
-import fr.viveris.jnidbus.message.PendingCall
+import fr.viveris.jnidbus.message.Promise
 import fr.viveris.jnidbus.remote.RemoteInterface
 import fr.viveris.jnidbus.remote.RemoteMember
 import fr.viveris.jnidbus.removeHandler
@@ -85,9 +85,9 @@ class SuspendingHandlerTest : DBusTestCase(){
     interface SuspendingHandlerTestRemote {
 
         @RemoteMember("blockingCallWithSuspend")
-        fun blockingCall(): PendingCall<SingleStringMessage>
+        fun blockingCall(): Promise<SingleStringMessage>
 
         @RemoteMember("standardCall")
-        fun standardCall(): PendingCall<SingleStringMessage>
+        fun standardCall(): Promise<SingleStringMessage>
     }
 }

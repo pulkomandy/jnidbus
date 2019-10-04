@@ -64,7 +64,7 @@
      */
     struct pending_call_context{
         context* ctx;
-        jobject pending_call;
+        jobject promise;
     };
 
     /**

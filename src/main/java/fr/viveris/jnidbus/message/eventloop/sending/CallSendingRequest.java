@@ -3,27 +3,29 @@
  */
 package fr.viveris.jnidbus.message.eventloop.sending;
 
-import fr.viveris.jnidbus.message.PendingCall;
+import fr.viveris.jnidbus.message.DBusPromise;
+import fr.viveris.jnidbus.message.Promise;
 import fr.viveris.jnidbus.message.eventloop.RequestCallback;
 import fr.viveris.jnidbus.serialization.DBusObject;
+import fr.viveris.jnidbus.serialization.Serializable;
 
 /**
  * Represent a dbus call waiting to be sent
  */
-public class CallSendingRequest extends AbstractSendingRequest {
+public class CallSendingRequest<T extends Serializable> extends AbstractSendingRequest {
     private String path;
     private String interfaceName;
     private String member;
     private String dest;
-    private PendingCall pendingCall;
+    private DBusPromise<T> promise;
 
-    public CallSendingRequest(DBusObject message, String path, String interfaceName, String member, String dest, PendingCall pendingCall, RequestCallback callback) {
+    public CallSendingRequest(DBusObject message, String path, String interfaceName, String member, String dest, DBusPromise<T> promise, RequestCallback callback) {
         super(message,callback);
         this.path = path;
         this.interfaceName = interfaceName;
         this.member = member;
         this.dest = dest;
-        this.pendingCall = pendingCall;
+        this.promise = promise;
     }
 
     public String getPath() {
@@ -42,7 +44,7 @@ public class CallSendingRequest extends AbstractSendingRequest {
         return dest;
     }
 
-    public PendingCall getPendingCall() {
-        return pendingCall;
+    public DBusPromise<T> getPromise() {
+        return promise;
     }
 }

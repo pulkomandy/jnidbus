@@ -5,7 +5,7 @@ package fr.viveris.jnidbus.cache;
 
 import fr.viveris.jnidbus.exception.RemoteObjectCheckException;
 import fr.viveris.jnidbus.message.Message;
-import fr.viveris.jnidbus.message.PendingCall;
+import fr.viveris.jnidbus.message.Promise;
 import fr.viveris.jnidbus.remote.RemoteMember;
 import fr.viveris.jnidbus.serialization.Serializable;
 
@@ -50,7 +50,7 @@ public class RemoteObjectMetadata {
         //process output type
         Type output = method.getGenericReturnType();
         if(!(output instanceof ParameterizedType)) throw new RemoteObjectCheckException("The return type of the method is not generic or its generic type is not explicit");
-        if(!PendingCall.class.equals(((ParameterizedType)output).getRawType())) throw new RemoteObjectCheckException("The return type is not a PendingCall");
+        if(!Promise.class.equals(((ParameterizedType)output).getRawType())) throw new RemoteObjectCheckException("The return type is not a Promise");
 
         Type realOutputType = ((ParameterizedType)output).getActualTypeArguments()[0];
         this.outputMetadata = Message.retrieveFromCache(((Class)realOutputType).asSubclass(Serializable.class));

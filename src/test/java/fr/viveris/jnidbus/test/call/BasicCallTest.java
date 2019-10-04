@@ -8,7 +8,7 @@ import fr.viveris.jnidbus.dispatching.MemberType;
 import fr.viveris.jnidbus.dispatching.annotation.Handler;
 import fr.viveris.jnidbus.dispatching.annotation.HandlerMethod;
 import fr.viveris.jnidbus.message.Message;
-import fr.viveris.jnidbus.message.PendingCall;
+import fr.viveris.jnidbus.message.Promise;
 import fr.viveris.jnidbus.remote.RemoteInterface;
 import fr.viveris.jnidbus.remote.RemoteMember;
 import fr.viveris.jnidbus.test.common.DBusObjects.SingleStringMessage;
@@ -28,9 +28,9 @@ public class BasicCallTest extends DBusTestCase {
         CallHandler handler = new CallHandler();
         this.receiver.addHandlerBlocking(handler);
         BasicCallTestRemote remoteObj = this.sender.createRemoteObject(this.receiverBusName, "/fr/viveris/jnidbus/test/call/BasicCallTest",BasicCallTestRemote.class);
-        PendingCall<Message.EmptyMessage> pending = remoteObj.emptyCall();
+        Promise<Message.EmptyMessage> pending = remoteObj.emptyCall();
         Listener<Message.EmptyMessage> l = new Listener<>();
-        pending.setListener(l);
+        pending.then(l);
         assertTrue(handler.barrier.await(5, TimeUnit.SECONDS));
         assertTrue(l.getBarrier().await(5, TimeUnit.SECONDS));
         assertEquals(Message.EMPTY,l.getValue());
@@ -45,9 +45,9 @@ public class BasicCallTest extends DBusTestCase {
 
         SingleStringMessage msg = new SingleStringMessage();
         msg.setString("test");
-        PendingCall<SingleStringMessage> pending = remoteObj.stringCall(msg);
+        Promise<SingleStringMessage> pending = remoteObj.stringCall(msg);
         Listener<SingleStringMessage> l = new Listener<>();
-        pending.setListener(l);
+        pending.then(l);
 
         assertTrue(handler.barrier.await(5, TimeUnit.SECONDS));
         assertTrue(l.getBarrier().await(5, TimeUnit.SECONDS));
@@ -87,10 +87,10 @@ public class BasicCallTest extends DBusTestCase {
     public interface BasicCallTestRemote {
 
         @RemoteMember("emptyCall")
-        PendingCall<Message.EmptyMessage> emptyCall();
+        Promise<Message.EmptyMessage> emptyCall();
 
         @RemoteMember("stringCall")
-        PendingCall<SingleStringMessage> stringCall(SingleStringMessage msg);
+        Promise<SingleStringMessage> stringCall(SingleStringMessage msg);
 
     }
 }

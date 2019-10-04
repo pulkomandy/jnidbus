@@ -60,7 +60,7 @@ JNIEXPORT void JNICALL Java_fr_viveris_jnidbus_bindings_bus_EventLoop_sendSignal
 /*
  * Class:     fr_viveris_jnidbus_bindings_bus_EventLoop
  * Method:    sendCall
- * Signature: (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lfr/viveris/jnidbus/serialization/DBusObject;Ljava/lang/String;Lfr/viveris/jnidbus/message/PendingCall;)V
+ * Signature: (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lfr/viveris/jnidbus/serialization/DBusObject;Ljava/lang/String;Lfr/viveris/jnidbus/message/Promise;)V
  */
 JNIEXPORT void JNICALL Java_fr_viveris_jnidbus_bindings_bus_EventLoop_sendCall
   (JNIEnv *, jobject, jlong, jstring, jstring, jstring, jobject, jstring, jobject);

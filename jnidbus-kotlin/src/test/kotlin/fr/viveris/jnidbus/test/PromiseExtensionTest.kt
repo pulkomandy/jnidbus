@@ -8,7 +8,6 @@ import fr.viveris.jnidbus.dispatching.annotation.Handler
 import fr.viveris.jnidbus.dispatching.annotation.HandlerMethod
 import fr.viveris.jnidbus.exception.DBusException
 import fr.viveris.jnidbus.message.Message
-import fr.viveris.jnidbus.message.PendingCall
 import fr.viveris.jnidbus.message.Promise
 import fr.viveris.jnidbus.remote.RemoteInterface
 import fr.viveris.jnidbus.remote.RemoteMember
@@ -20,21 +19,21 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
-class PendingCallExtensionTest : DBusTestCase() {
+class PromiseExtensionTest : DBusTestCase() {
     @Test
     fun `Extension suspend and return correct result`() = runBlocking{
         val handler = CallHandler()
-        this@PendingCallExtensionTest.receiver.addHandler(handler)
-        val remoteObj = this@PendingCallExtensionTest.sender.createRemoteObject(
-                this@PendingCallExtensionTest.receiverBusName,
-                "/Kotlin/PendingCallExtensionTest",
-                PendingCallExtensionTestRemote::class.java)
+        this@PromiseExtensionTest.receiver.addHandler(handler)
+        val remoteObj = this@PromiseExtensionTest.sender.createRemoteObject(
+                this@PromiseExtensionTest.receiverBusName,
+                "/Kotlin/PromiseExtensionTest",
+                PromiseExtensionTestRemote::class.java)
 
         val pending = remoteObj.blockingCall()
         val msg = withTimeout(2500){
             pending.await()
         }
-        this@PendingCallExtensionTest.receiver.removeHandler(handler)
+        this@PromiseExtensionTest.receiver.removeHandler(handler)
 
         assertEquals("test",msg.string)
     }
@@ -42,11 +41,11 @@ class PendingCallExtensionTest : DBusTestCase() {
     @Test
     fun `Extension suspend and return correct exception`() = runBlocking{
         val handler = CallHandler()
-        this@PendingCallExtensionTest.receiver.addHandler(handler)
-        val remoteObj = this@PendingCallExtensionTest.sender.createRemoteObject(
-                this@PendingCallExtensionTest.receiverBusName,
-                "/Kotlin/PendingCallExtensionTest",
-                PendingCallExtensionTestRemote::class.java)
+        this@PromiseExtensionTest.receiver.addHandler(handler)
+        val remoteObj = this@PromiseExtensionTest.sender.createRemoteObject(
+                this@PromiseExtensionTest.receiverBusName,
+                "/Kotlin/PromiseExtensionTest",
+                PromiseExtensionTestRemote::class.java)
 
         val pending = remoteObj.failCall()
         try{
@@ -62,25 +61,26 @@ class PendingCallExtensionTest : DBusTestCase() {
     @Test
     fun `Manual pending call cancellation cancels continuation`() = runBlocking{
         val handler = CallHandler()
-        this@PendingCallExtensionTest.receiver.addHandler(handler)
-        val remoteObj = this@PendingCallExtensionTest.sender.createRemoteObject(
-                this@PendingCallExtensionTest.receiverBusName,
-                "/Kotlin/PendingCallExtensionTest",
-                PendingCallExtensionTestRemote::class.java)
+        this@PromiseExtensionTest.receiver.addHandler(handler)
+        val remoteObj = this@PromiseExtensionTest.sender.createRemoteObject(
+                this@PromiseExtensionTest.receiverBusName,
+                "/Kotlin/PromiseExtensionTest",
+                PromiseExtensionTestRemote::class.java)
 
         val pending = remoteObj.blockingCall()
-        pending.cancel()
+        val exc = Exception("Cancelled!");
+        pending.fail(exc)
         try{
             withTimeout(2500){
                 pending.await()
             }
             fail("No exception raised")
-        }catch (e : DBusException){
-            assertEquals(PendingCall.PENDING_CALL_CANCELLED_ERROR_CODE,e.code)
+        }catch (e : Exception){
+            assertEquals(exc.message,e.message)
         }
     }
 
-    @Handler(path = "/Kotlin/PendingCallExtensionTest", interfaceName = "Kotlin.PendingCallExtensionTest")
+    @Handler(path = "/Kotlin/PromiseExtensionTest", interfaceName = "Kotlin.PromiseExtensionTest")
     class CallHandler : GenericHandler() {
 
         @HandlerMethod(member = "blockingCall", type = MemberType.METHOD)
@@ -94,12 +94,12 @@ class PendingCallExtensionTest : DBusTestCase() {
         }
     }
 
-    @RemoteInterface("Kotlin.PendingCallExtensionTest")
-    interface PendingCallExtensionTestRemote {
+    @RemoteInterface("Kotlin.PromiseExtensionTest")
+    interface PromiseExtensionTestRemote {
         @RemoteMember("blockingCall")
-        fun blockingCall(): PendingCall<SingleStringMessage>
+        fun blockingCall(): Promise<SingleStringMessage>
 
         @RemoteMember("failCall")
-        fun failCall(): PendingCall<SingleStringMessage>
+        fun failCall(): Promise<SingleStringMessage>
     }
 }

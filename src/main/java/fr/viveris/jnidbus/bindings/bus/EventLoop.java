@@ -4,9 +4,9 @@ import fr.viveris.jnidbus.dispatching.Dispatcher;
 import fr.viveris.jnidbus.exception.ClosedEventLoopException;
 import fr.viveris.jnidbus.exception.DBusException;
 import fr.viveris.jnidbus.exception.EventLoopSetupException;
-import fr.viveris.jnidbus.message.PendingCall;
-import fr.viveris.jnidbus.message.eventloop.PendingCallRedispatchRequest;
+import fr.viveris.jnidbus.message.Promise;
 import fr.viveris.jnidbus.message.eventloop.RequestCallback;
+import fr.viveris.jnidbus.message.eventloop.RunnableRequest;
 import fr.viveris.jnidbus.message.eventloop.dispatcher.DispatcherRegistrationRequest;
 import fr.viveris.jnidbus.message.eventloop.dispatcher.AbstractDispatcherRequest;
 import fr.viveris.jnidbus.message.eventloop.EventLoopRequest;
@@ -20,6 +20,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -34,7 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Any call made to the event loop while it has not started will block until the event loop started or failed to start. This class is also responsible for closing
  * the underlying DBus connection as we want to make sure all the pending events are processed before closing.
  */
-public class EventLoop implements Closeable {
+public class EventLoop implements Closeable, Executor {
     private static final Logger LOG = LoggerFactory.getLogger(EventLoop.class);
     /**
      * Limit the number of send by tick to avoid event loop stall
@@ -176,7 +177,7 @@ public class EventLoop implements Closeable {
     private native void sendSignal(long contextPtr, String path, String interfaceName, String member, DBusObject msg);
 
     /**
-     * fr.viveris.jnidbus.Call a dbus distant method. Calls are always made asynchronously and the result will eb given to the PendingCall
+     * fr.viveris.jnidbus.Call a dbus distant method. Calls are always made asynchronously and the result will eb given to the Promise
      *
      * @param contextPtr pointer to the native context, its better to give it as an argument rather than fetching it from the native
      *                   for performances purposes
@@ -185,9 +186,9 @@ public class EventLoop implements Closeable {
      * @param member member of the dbus interface
      * @param msg pre-serialized object that will be transferred into the native dbus message
      * @param dest destination bus to which send the message
-     * @param pendingCall listener that will be notified when the call state changes
+     * @param promise listener that will be notified when the call state changes
      */
-    private native void sendCall(long contextPtr, String path, String interfaceName, String member, DBusObject msg, String dest, PendingCall pendingCall);
+    private native void sendCall(long contextPtr, String path, String interfaceName, String member, DBusObject msg, String dest, Promise promise);
 
     /**
      * register an object path handler to dbus which will dispatch any message on the given object path to the given JVM dispatcher. The dispatcher
@@ -270,11 +271,10 @@ public class EventLoop implements Closeable {
 
                 }
 
-            } else if(request instanceof PendingCallRedispatchRequest){
-                ((PendingCallRedispatchRequest) request).getPendingCall().forceNotification();
-
             }else if(request instanceof AbstractSendingRequest){
                 this.processSendingRequest((AbstractSendingRequest) request);
+            }else if(request instanceof RunnableRequest){
+                ((RunnableRequest) request).getRunnable().run();
             }
 
             if(request.getCallback() != null){
@@ -298,7 +298,7 @@ public class EventLoop implements Closeable {
         if(sendingRequest instanceof CallSendingRequest){
             CallSendingRequest req = (CallSendingRequest) sendingRequest;
             LOG.debug("Sending DBus call {}.{}({}) on path {} for the bus {}",req.getInterfaceName(),req.getMember(),req.getMessage().getSignature(),req.getPath(),req.getDest());
-            this.sendCall(this.dBusContextPointer,req.getPath(),req.getInterfaceName(),req.getMember(),req.getMessage(),req.getDest(),req.getPendingCall());
+            this.sendCall(this.dBusContextPointer,req.getPath(),req.getInterfaceName(),req.getMember(),req.getMessage(),req.getDest(),req.getPromise());
 
         }else if(sendingRequest instanceof ErrorReplySendingRequest){
             ErrorReplySendingRequest req = (ErrorReplySendingRequest) sendingRequest;
@@ -343,6 +343,13 @@ public class EventLoop implements Closeable {
         this.wakeupIfNeeded();
     }
 
+    @Override
+    public void execute(Runnable runnable) {
+        this.checkEventLoop();
+        this.eventQueue.add(new RunnableRequest(runnable,null));
+        this.wakeupIfNeeded();
+    }
+
     /**
      * Asynchronously send a message to dbus.
      * @param request sending request we want the event loop to process
@@ -350,12 +357,6 @@ public class EventLoop implements Closeable {
     public void send(AbstractSendingRequest request){
         this.checkEventLoop();
         this.eventQueue.add(request);
-        this.wakeupIfNeeded();
-    }
-
-    public void redispatch(PendingCall call, RequestCallback callback){
-        this.checkEventLoop();
-        this.eventQueue.add(new PendingCallRedispatchRequest(call,callback));
         this.wakeupIfNeeded();
     }
 

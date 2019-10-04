@@ -8,7 +8,6 @@ import fr.viveris.jnidbus.dispatching.MemberType;
 import fr.viveris.jnidbus.dispatching.annotation.Handler;
 import fr.viveris.jnidbus.dispatching.annotation.HandlerMethod;
 import fr.viveris.jnidbus.message.Message;
-import fr.viveris.jnidbus.message.PendingCall;
 import fr.viveris.jnidbus.message.Promise;
 import fr.viveris.jnidbus.remote.RemoteInterface;
 import fr.viveris.jnidbus.remote.RemoteMember;
@@ -30,9 +29,9 @@ public class AsyncCallTest extends DBusTestCase {
         this.receiver.addHandlerBlocking(handler);
         AsyncCallTestRemote remoteObj = this.sender.createRemoteObject(this.receiverBusName, "/fr/viveris/jnidbus/test/call/AsyncCallTest",AsyncCallTestRemote.class);
 
-        PendingCall<Message.EmptyMessage> pending = remoteObj.blockingCall();
+        Promise<Message.EmptyMessage> pending = remoteObj.blockingCall();
         Listener<Message.EmptyMessage> l = new Listener<>();
-        pending.setListener(l);
+        pending.then(l);
 
         assertTrue(handler.barrier.await(5, TimeUnit.SECONDS));
         assertTrue(l.getBarrier().await(5, TimeUnit.SECONDS));
@@ -46,12 +45,12 @@ public class AsyncCallTest extends DBusTestCase {
         this.receiver.addHandlerBlocking(handler);
         AsyncCallTestRemote remoteObj = this.sender.createRemoteObject(this.receiverBusName, "/fr/viveris/jnidbus/test/call/AsyncCallTest",AsyncCallTestRemote.class);
 
-        PendingCall<Message.EmptyMessage> pendingEmpty = remoteObj.blockingCall();
-        PendingCall<SingleStringMessage> pendingString = remoteObj.instantCall();
+        Promise<Message.EmptyMessage> pendingEmpty = remoteObj.blockingCall();
+        Promise<SingleStringMessage> pendingString = remoteObj.instantCall();
         Listener<Message.EmptyMessage> lEmpty = new Listener<>();
         Listener<SingleStringMessage> lString = new Listener<>();
-        pendingEmpty.setListener(lEmpty);
-        pendingString.setListener(lString);
+        pendingEmpty.then(lEmpty);
+        pendingString.then(lString);
 
         assertTrue(lString.getBarrier().await(1, TimeUnit.SECONDS));
         assertTrue(lEmpty.getBarrier().await(5, TimeUnit.SECONDS));
@@ -107,9 +106,9 @@ public class AsyncCallTest extends DBusTestCase {
     @RemoteInterface("fr.viveris.jnidbus.test.Call.AsyncCallTest")
     public interface AsyncCallTestRemote{
         @RemoteMember("blockingCall")
-        PendingCall<Message.EmptyMessage> blockingCall();
+        Promise<Message.EmptyMessage> blockingCall();
 
         @RemoteMember("instantReturn")
-        PendingCall<SingleStringMessage> instantCall();
+        Promise<SingleStringMessage> instantCall();
     }
 }

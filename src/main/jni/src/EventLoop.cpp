@@ -244,7 +244,7 @@ JNIEXPORT void JNICALL Java_fr_viveris_jnidbus_bindings_bus_EventLoop_sendSignal
 
 /**
  *
- * Asynchronously call a DBus method. The function will register the given JVM PendingCall to DBus which will notify
+ * Asynchronously call a DBus method. The function will register the given JVM Promise to DBus which will notify
  * it when its state changes
  *
  * Class:     fr_viveris_jnidbus_bindings_bus_Connection
@@ -252,7 +252,7 @@ JNIEXPORT void JNICALL Java_fr_viveris_jnidbus_bindings_bus_EventLoop_sendSignal
  * Signature: (Lfr/viveris/jnidbus/bindings/message/Event;)Z
  */
 JNIEXPORT void JNICALL Java_fr_viveris_jnidbus_bindings_bus_EventLoop_sendCall
-  (JNIEnv * env, jobject target, jlong ctxPtr, jstring pathJVM, jstring interfaceJVM, jstring memberJVM, jobject messageJVM, jstring destJVM, jobject pendingCall){
+  (JNIEnv * env, jobject target, jlong ctxPtr, jstring pathJVM, jstring interfaceJVM, jstring memberJVM, jobject messageJVM, jstring destJVM, jobject promise){
     context* ctx = (context*) ctxPtr;
 
     //get the dbus connection from pointer
@@ -276,9 +276,9 @@ JNIEXPORT void JNICALL Java_fr_viveris_jnidbus_bindings_bus_EventLoop_sendCall
       if (!dbus_connection_send_with_reply(conn,msg,&res,-1)) {
         env->ThrowNew(find_class(ctx,"java/lang/IllegalStateException"),"Sending failed (probably caused by an out of memory)");
       }else{
-        //give the JVM PendingCall to DBus for later notification
+        //give the JVM Promise to DBus for later notification
         pending_call_context* callContext = (pending_call_context*) malloc(sizeof(pending_call_context));
-        callContext->pending_call = env->NewGlobalRef(pendingCall);
+        callContext->promise = env->NewGlobalRef(promise);
         callContext->ctx = ctx;
         dbus_pending_call_set_notify(res,handle_call_response,callContext,NULL);
       }

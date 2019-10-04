@@ -8,8 +8,9 @@ import fr.viveris.jnidbus.cache.Cache;
 import fr.viveris.jnidbus.cache.RemoteObjectMetadata;
 import fr.viveris.jnidbus.cache.SignalMetadata;
 import fr.viveris.jnidbus.exception.RemoteObjectCheckException;
+import fr.viveris.jnidbus.message.DBusPromise;
 import fr.viveris.jnidbus.message.Message;
-import fr.viveris.jnidbus.message.PendingCall;
+import fr.viveris.jnidbus.message.Promise;
 import fr.viveris.jnidbus.message.eventloop.RequestCallback;
 import fr.viveris.jnidbus.message.eventloop.sending.CallSendingRequest;
 
@@ -71,24 +72,24 @@ public class RemoteObjectInterceptor implements InvocationHandler {
         //get metadata from cache
         RemoteObjectMetadata meta = RemoteObjectInterceptor.getFromCache(method);
 
-        //create a wildcard pendingCall, this wont fail as the method was checked and return the correct type
-        final PendingCall pendingCall = new PendingCall(meta.getOutputMetadata().getMessageClass(),this.eventLoop);
+        //create a wildcard Promise, this wont fail as the method was checked and return the correct type
+        final DBusPromise promise = new DBusPromise(meta.getOutputMetadata().getMessageClass());
 
-        //send call and return the PendingCall, set the request callback to fail the pending call if the sending failed
+        //send call and return the Promise, set the request callback to fail the Promise if the sending failed
         this.eventLoop.send(new CallSendingRequest(msg.serialize(),
                 this.objectPath,
                 this.interfaceName,
                 meta.getMember(),
                 this.destinationBus,
-                pendingCall,
+                promise,
                 new RequestCallback() {
                     @Override
                     public void call(Exception e) {
-                        if(e != null) pendingCall.fail(e.getClass().getName(),"The call could not be sent");
+                        if(e != null) promise.fail(e.getClass().getName(),"The call could not be sent");
                     }
                 }));
 
-        return pendingCall;
+        return promise;
     }
 
     private static RemoteObjectMetadata getFromCache(Method method){

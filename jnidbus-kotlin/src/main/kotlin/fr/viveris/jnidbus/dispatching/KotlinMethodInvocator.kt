@@ -1,7 +1,6 @@
 package fr.viveris.jnidbus.dispatching
 
 import fr.viveris.jnidbus.exception.DBusException
-import fr.viveris.jnidbus.message.PendingCall
 import fr.viveris.jnidbus.message.Promise
 import fr.viveris.jnidbus.serialization.Serializable
 import kotlinx.coroutines.CancellationException
@@ -58,14 +57,7 @@ class KotlinMethodInvocator(
         }
         job.invokeOnCompletion {
             if(it != null){
-                when(it){
-                    is CancellationException -> {
-                        promise.reject(DBusException(PendingCall.PENDING_CALL_CANCELLED_ERROR_CODE,"The handler execution was cancelled"))
-                    }
-                    else -> {
-                        promise.reject(DBusException(it.javaClass.name,it.message))
-                    }
-                }
+                promise.fail(DBusException(it.javaClass.name,it.message))
             }
         }
         return promise

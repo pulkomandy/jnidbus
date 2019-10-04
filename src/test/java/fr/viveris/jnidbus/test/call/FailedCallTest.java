@@ -10,7 +10,7 @@ import fr.viveris.jnidbus.dispatching.annotation.HandlerMethod;
 import fr.viveris.jnidbus.exception.DBusException;
 import fr.viveris.jnidbus.exception.MessageSignatureMismatchException;
 import fr.viveris.jnidbus.message.Message;
-import fr.viveris.jnidbus.message.PendingCall;
+import fr.viveris.jnidbus.message.Promise;
 import fr.viveris.jnidbus.remote.RemoteInterface;
 import fr.viveris.jnidbus.remote.RemoteMember;
 import fr.viveris.jnidbus.test.common.DBusObjects.SingleStringMessage;
@@ -31,9 +31,9 @@ public class FailedCallTest extends DBusTestCase {
         this.receiver.addHandlerBlocking(handler);
         FailedCallTestRemote remoteObj = this.sender.createRemoteObject(this.receiverBusName, "/fr/viveris/jnidbus/test/call/FailedCallTest",FailedCallTestRemote.class);
 
-        PendingCall<Message.EmptyMessage> pending = remoteObj.unknownCall();
+        Promise<Message.EmptyMessage> pending = remoteObj.unknownCall();
         Listener<Message.EmptyMessage> l = new Listener<>();
-        pending.setListener(l);
+        pending.then(l);
 
         assertFalse(handler.barrier.await(2, TimeUnit.SECONDS));
         assertTrue(l.getBarrier().await(2, TimeUnit.SECONDS));
@@ -48,9 +48,9 @@ public class FailedCallTest extends DBusTestCase {
         this.receiver.addHandlerBlocking(handler);
         FailedCallTestRemote remoteObj = this.sender.createRemoteObject(this.receiverBusName, "/fr/viveris/jnidbus/test/call/FailedCallTest",FailedCallTestRemote.class);
 
-        PendingCall<SingleStringMessage> pending = remoteObj.mismatchCall();
+        Promise<SingleStringMessage> pending = remoteObj.mismatchCall();
         Listener<SingleStringMessage> l = new Listener<>();
-        pending.setListener(l);
+        pending.then(l);
 
         assertTrue(handler.barrier.await(2, TimeUnit.SECONDS));
         assertTrue(l.getBarrier().await(2, TimeUnit.SECONDS));
@@ -65,9 +65,9 @@ public class FailedCallTest extends DBusTestCase {
         this.receiver.addHandlerBlocking(handler);
         FailedCallTestRemote remoteObj = this.sender.createRemoteObject(this.receiverBusName, "/fr/viveris/jnidbus/test/call/FailedCallTest",FailedCallTestRemote.class);
 
-        PendingCall<Message.EmptyMessage> pending = remoteObj.failCall();
+        Promise<Message.EmptyMessage> pending = remoteObj.failCall();
         Listener<Message.EmptyMessage> l = new Listener<>();
-        pending.setListener(l);
+        pending.then(l);
         assertTrue(handler.barrier.await(2, TimeUnit.SECONDS));
         assertTrue(l.getBarrier().await(2, TimeUnit.SECONDS));
         assertNull(l.getValue());
@@ -106,12 +106,12 @@ public class FailedCallTest extends DBusTestCase {
     public interface FailedCallTestRemote{
 
         @RemoteMember("unknownCall")
-        PendingCall<Message.EmptyMessage> unknownCall();
+        Promise<Message.EmptyMessage> unknownCall();
 
         @RemoteMember("mismatchCall")
-        PendingCall<SingleStringMessage> mismatchCall();
+        Promise<SingleStringMessage> mismatchCall();
 
         @RemoteMember("failCall")
-        PendingCall<Message.EmptyMessage> failCall();
+        Promise<Message.EmptyMessage> failCall();
     }
 }
