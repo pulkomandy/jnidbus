@@ -1,5 +1,8 @@
 package fr.viveris.jnidbus.message.eventloop;
 
+/**
+ * Ask the EventLoop to execute the given Runnable
+ */
 public class RunnableRequest extends EventLoopRequest {
     private Runnable runnable;
 

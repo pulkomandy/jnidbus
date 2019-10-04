@@ -157,8 +157,10 @@ public class Dispatcher {
                             LOG.debug("Handler returned a result, dispatch the reply: {}",returnObject.toString());
                             this.eventLoop.send(new ReplySendingRequest(((Message)returnObject).serialize(),msgPointer,interfaceName,member,null));
                         }else if(returnObject instanceof Promise){
+                            //if the handler returned a Promise, set the callback, do not force the dispatch on the E.L
+                            // as we only send one message
                             LOG.debug("Handler returned a promise, set the callback");
-                            ((Promise) returnObject).then(this.eventLoop, new Promise.Callback<Serializable>() {
+                            ((Promise) returnObject).then( new Promise.Callback<Serializable>() {
                                 @Override
                                 public void value(Serializable value, Exception e) {
                                     if(e != null){

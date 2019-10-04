@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 
 /**
  * Public API of the library. contains all the primitives to interact with Dbus.
@@ -245,5 +246,9 @@ public class Dbus implements AutoCloseable {
     public void close() throws Exception {
         LOG.info("Closing DBus connection and unregister bus name {}",this.connection.getBusName());
         this.eventLoop.close();
+    }
+
+    public Executor getEventLoopExecutor(){
+        return this.eventLoop;
     }
 }

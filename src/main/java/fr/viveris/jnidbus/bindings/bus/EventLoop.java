@@ -24,16 +24,18 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * The event loop is the core of the library, it will be responsible for sending, receiving and waiting for events. The whole object is thread safe and communication
- * between this class and other threads is done using Queues. This allows us to easily implement a safe E.L without having to deal with low level and error prone
- * wait/notify mechanism.
+ * The event loop is the core of the library, it will be responsible for sending, receiving and waiting for events. The
+ * whole object is thread safe and communication between this class and other threads is done using Queues. This allows
+ * us to easily implement a safe E.L without having to deal with low level and error prone wait/notify mechanism.
  *
- * We have to proceed like this as the event loop must not be waiting for event when writing because Dbus might want to listen for write events in order to send
- * efficiently. In addition there is some synchronization around the wakeup call, which will unblock the tick() call, this synchronization is made in order to
- * avoid extra calls to wakeup() which could cause the loop to spin faster than it needs to.
+ * The events are guaranteed to be processed at some point. The E.L can decide to delay event processing to let DBus
+ * dispatch its messages. If events are sent from the E.L, they may be processed during the same tick. The E.L also is
+ * an Executor to re-dispatch promises on the E.L easily. You can also use the E.L as an executor if you have DBus intensive
+ * code that would send a lot of events.
  *
- * Any call made to the event loop while it has not started will block until the event loop started or failed to start. This class is also responsible for closing
- * the underlying DBus connection as we want to make sure all the pending events are processed before closing.
+ * Any call made to the event loop while it has not started will block until the event loop started or failed to start.
+ * This class is also responsible for closing the underlying DBus connection as we want to make sure all the pending events
+ * are processed before closing.
  */
 public class EventLoop implements Closeable, Executor {
     private static final Logger LOG = LoggerFactory.getLogger(EventLoop.class);
@@ -343,6 +345,11 @@ public class EventLoop implements Closeable, Executor {
         this.wakeupIfNeeded();
     }
 
+    /**
+     * Dispatch a Runnable to the EventLoop. The runnable will be processed during next tick. Use this method if you have
+     * a dbus-intensive code that would send a lot of events to the EventLoop.
+     * @param runnable
+     */
     @Override
     public void execute(Runnable runnable) {
         this.checkEventLoop();
@@ -377,6 +384,8 @@ public class EventLoop implements Closeable, Executor {
      * so the next calls avoid doing it
      */
     private void wakeupIfNeeded(){
+        //if the call comes from the EventLoop, no wakeup are needed, else check the wakeup flag
+        if(this.isCallerOnEventLoop()) return;
         synchronized (this.wakeupLock){
             if(shouldWakeup){
                 this.wakeup(this.dBusContextPointer);

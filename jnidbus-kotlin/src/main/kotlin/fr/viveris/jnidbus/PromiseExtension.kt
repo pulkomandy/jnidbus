@@ -9,8 +9,8 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /**
- * suspend the current coroutine until a result or an error is received. If the coroutine is cancelled, the Promise
- * will receive a CancellationException. This function will throw the exception received by the Promise.
+ * suspend the current coroutine until a result or an error is received. This function will throw the exception received
+ * by the Promise.
  */
 suspend fun <T : Serializable> Promise<T>.await() : T = suspendCancellableCoroutine{cont ->
     this.then{value,exception ->

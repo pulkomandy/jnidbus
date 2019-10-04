@@ -10,20 +10,23 @@ import fr.viveris.jnidbus.message.eventloop.sending.ReplySendingRequest;
 import fr.viveris.jnidbus.serialization.Serializable;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Non-blocking implementation of a promise, the thread safety is assured by AtomicReference and a spin-wait loop.
- * This implementation does not take care of the execution context and the callback may be called on the thread setting
- * it or on the thread resolving the promise depending upon which comes first.
+ * You can specify the callback execution thread by specifying the Executor parameter when binding the callback
  *
- * As this implementation is non-blocking the internal state is controled by an AtomicReference on the PromiseState enum
- * which lists the finite list of state the promise can be in, as there can be a data race when both the value and the callback
+ * As this implementation is lock-free, the internal state is controlled by an AtomicReference on the PromiseState enum
+ * which contains the finite list of state the promise can be in, as there can be a data race when both the value and the callback
  * are set at the same time, a spin-wait loop is used to do an active-waiting for a couple of CPU cycle and prevent any race
- * @param <T>
+ *
+ * @param <T> value type expected to be passed to the callback
  */
-public class Promise<T extends Serializable> {
+public class Promise<T> {
+    //Executor used by default, execute the runnable on the current thread
     private static final Executor NOOP_EXECUTOR = new NoOpExecutor();
 
     //all the different states our promise can be in
@@ -68,7 +71,7 @@ public class Promise<T extends Serializable> {
 
     /**
      * Resolve the promise and set it to the given value, if the promise is already resolved or failed, an exception will
-     * be thrown. If a callback is already set, its execution will be done in the current thread.
+     * be thrown. If a callback is already set, dispatch its execution
      * @param value
      */
     public void resolve(T value){
@@ -87,7 +90,7 @@ public class Promise<T extends Serializable> {
 
     /**
      * Fail the promise and set the exception to the given value, if the promise is already resolved or failed, an exception will
-     * be thrown. If a callback is already set, its execution will be done in the current thread.
+     * be thrown. If a callback is already set, dispatch its execution
      * @param e
      */
     public void fail(Exception e){
@@ -107,7 +110,8 @@ public class Promise<T extends Serializable> {
     /**
      * set the promise callback, the callback will be called when either a value or an exception is set in the promise,
      * the callback will be executed in the given Executor
-     * @param callback
+     * @param executor executor the callback will be dispatched to
+     * @param callback callback to execute
      */
     public void then(Executor executor, Callback<T> callback){
         if(!this.callback.compareAndSet(null,callback)) {
@@ -125,13 +129,20 @@ public class Promise<T extends Serializable> {
         }
     }
 
+    /**
+     * Same as then(Executor, Callback<T>) but without specifying the Executor. The callback will be executed on the thread
+     * calling resolve() or on the thread calling then() depending upon which comes last
+     * @param callback
+     */
     public void then(Callback<T> callback){
         this.then(NOOP_EXECUTOR,callback);
     }
 
     /**
-     * Same method as then(Promise.Callback) except that this method return a Promise and pass the exception implicitely
-     * to the returned promise, use this method to chain promises more easily than with then(Promise.Callback)
+     * Same method as then(Promise.Callback) except that this method return a Promise and pass the exception implicitly
+     * to the returned promise, use this method to chain promises more easily than with then(Promise.Callback). you can
+     * specify on which thread the callable will be executed.
+     * @param executor executor on which the callback will be executed
      * @param callable
      * @param <U>
      * @return
@@ -152,6 +163,13 @@ public class Promise<T extends Serializable> {
         return returned;
     }
 
+    /**
+     * Same as then(Executor, ImplicitExceptionCallback<T,U>) but without specifying the executor The callback will be
+     * executed on the thread calling resolve() or on the thread calling then() depending upon which comes last
+     * @param callable
+     * @param <U>
+     * @return
+     */
     public <U extends Serializable> Promise<U> then(final ImplicitExceptionCallback<T,U> callable){
         return this.then(NOOP_EXECUTOR,callable);
     }
@@ -245,6 +263,13 @@ public class Promise<T extends Serializable> {
      * @param <T>
      */
     public interface Callback<T>{
+        /**
+         * Method called when the promise is either resolved or failed, only one of either value or exception will be
+         * not-null.
+         *
+         * @param value
+         * @param e
+         */
         void value(T value, Exception e);
     }
 
@@ -258,6 +283,37 @@ public class Promise<T extends Serializable> {
         Out value(In value);
     }
 
+    /**
+     * Returns a Promise that will be resolved when all the given promises are resolved, the value passed to the returned
+     * promise is the array of promises that were awaited. If one of the promises fail, the returned promise will be failed
+     * too
+     *
+     * @param promises
+     * @return
+     */
+    public static Promise<Promise[]> awaitAll(final Promise<?>... promises){
+        if(promises.length == 0) return new Promise<>(new Promise[0]);
+
+        final int nbrPromise = promises.length;
+        final AtomicInteger counter = new AtomicInteger(0);
+        final Promise<Promise[]> returned = new Promise<>();
+        final AtomicBoolean isResolved = new AtomicBoolean(false);
+
+        for(Promise<?> promise : promises){
+            promise.then(NOOP_EXECUTOR, new Callback() {
+                @Override
+                public void value(Object value, Exception e) {
+                    if(e != null && isResolved.compareAndSet(false,true)) returned.fail(e);
+                    if(counter.incrementAndGet() == nbrPromise && isResolved.compareAndSet(false,true)) returned.resolve(promises);
+                }
+            });
+        }
+        return returned;
+    }
+
+    /**
+     * Default executor used for callback execution, it will execute the callback in the current thread
+     */
     private static class NoOpExecutor implements Executor{
         @Override
         public void execute(Runnable runnable) {

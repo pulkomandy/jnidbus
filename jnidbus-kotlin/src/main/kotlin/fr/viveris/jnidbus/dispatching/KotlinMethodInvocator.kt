@@ -56,6 +56,7 @@ class KotlinMethodInvocator(
             }
         }
         job.invokeOnCompletion {
+            //if the job complete exceptionally (cancel or exception) fail the promise
             if(it != null){
                 promise.fail(DBusException(it.javaClass.name,it.message))
             }

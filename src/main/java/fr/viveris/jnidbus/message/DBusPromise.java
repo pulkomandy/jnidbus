@@ -4,13 +4,28 @@ import fr.viveris.jnidbus.exception.DBusException;
 import fr.viveris.jnidbus.serialization.DBusObject;
 import fr.viveris.jnidbus.serialization.Serializable;
 
+/**
+ * DBus promises are used by JNI code to notify the return af a call. Such promises must be instantiated with the expected
+ * value class for performance purposes (reflection cal to determine promise type at runtime are expensive)
+ * @param <T>
+ */
 public class DBusPromise<T extends Serializable> extends Promise<T> {
     private Class<T> clazz;
 
+    /**
+     * Create a new promise expecting the given serializable type
+     * @param clazz
+     */
     public DBusPromise(Class<T> clazz){
         this.clazz = clazz;
     }
 
+    /**
+     * Called by JNI code. The promise will try to deserialize the DBusObject using the expected type and fail if it is
+     * not possible
+     *
+     * @param object
+     */
     private void resolve(DBusObject object){
         try {
             T value;
@@ -24,11 +39,16 @@ public class DBusPromise<T extends Serializable> extends Promise<T> {
                 this.resolve(value);
             }
         } catch (Exception e) {
-           this.fail(new DBusException(e.getClass().getName(),e.getMessage()));
+            if(!this.isResolved()) this.fail(new DBusException(e.getClass().getName(),e.getMessage()));
         }
     }
 
+    /**
+     * Fail the promise with a DBusException
+     * @param name
+     * @param message
+     */
     public void fail(String name, String message){
-        this.fail(new DBusException(name,message));
+        if(!this.isResolved()) this.fail(new DBusException(name,message));
     }
 }

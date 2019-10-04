@@ -271,7 +271,9 @@ JNIDBus provide a way to represent your DBus distant objects through `Java proxi
 
 There must be only one parameter on each method which must be serializable. If your call do not have any parameter you can omit it instead of using the `EmptyMessage` class. Each method must return a `Promise` with its generic type being the expected return type.
 
-The`Promise` class allows you to bind a callback that will be notified when a result or an error is received. A callback will be notified once and further results/errors will be ignored. you can cancel a call by manually calling the `fail()` method on the Promise which will notify the callback and block any incoming result. The Listener will be executed on same thread as the event loop so you must avoid blocking code at all cost.
+The`Promise` class allows you to bind a callback that will be notified when a result or an error is received. A callback will be notified once and further results/errors will be ignored. you can cancel a call by manually calling the `fail()` method on the Promise which will notify the callback and block any incoming result. you can choose the thread that will execute the callback by specifying the `Executor` parameter. The `EventLoop` itself is an executor and you can it if your callback execute DBus methods to speed up the event processing.
+
+By default, if no `Executor` are specified, the callback will be executed either on the thread binding the callback, or on the event loop, depending upon which comes last. 
 
 *<u>example of a call without input that returns a string:</u>*
 
